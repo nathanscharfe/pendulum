@@ -14,6 +14,8 @@ Completed:
   - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
 - Added a Python/Jupyter notebook to extract calibration data and fit the actuator command equation:
   - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
+- Documented the linear actuator calibration procedure:
+  - `hardware/linear actuator calibration/calibration_procedure.md`
 - Fit the actuator speed-to-delay command equation:
 
 ```text

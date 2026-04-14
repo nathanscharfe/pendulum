@@ -23,6 +23,7 @@ Planned setup:
 
 Current hardware-related files:
 
+- `hardware/linear actuator calibration/calibration_procedure.md`
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
@@ -73,6 +74,7 @@ This repository is still being organized. A likely structure is:
 |   |   `-- stl/     # 3D-printable STL exports
 |   `-- linear actuator calibration/
 |       +-- actuator_speed_fit.ipynb
+|       +-- calibration_procedure.md
 |       +-- linear actuator speed calibration.xlsx
 |       `-- calibrate_linear_actuator/
 |           `-- calibrate_linear_actuator.ino
