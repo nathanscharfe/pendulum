@@ -30,7 +30,7 @@ delay = 58399.75215056 / (speed + 0.00022846) - 3.82116746
   - Hardware Bring-Up
   - Pendulum Sensing
   - System Modeling and LQR
-  - LabVIEW-Arduino Integration
+  - Software-Hardware Integration
   - Final Demo and Documentation
 - Committed and pushed the initial project setup and calibration files.
 

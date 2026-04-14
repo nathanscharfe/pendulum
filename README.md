@@ -7,8 +7,8 @@ This project is a starting point for an optimal control demonstration using a pe
 - Model the pendulum and linear actuator system.
 - Identify useful system parameters from measurement and calibration data.
 - Design an LQR controller for the linearized pendulum dynamics.
-- Implement the control loop using LabVIEW.
-- Use an Arduino as the interface between LabVIEW and the physical hardware.
+- Implement the control loop using a software interface such as LabVIEW, Python, MATLAB, or another suitable tool.
+- Use an Arduino as the interface between the control software and the physical hardware.
 - Compare real hardware behavior against the model and controller predictions.
 
 ## Hardware
@@ -46,7 +46,7 @@ Editable CAD source files, if used, should go in:
 
 Planned software stack:
 
-- LabVIEW for the main control interface and experiment workflow
+- LabVIEW, Python, MATLAB, or another suitable tool for the main control interface and experiment workflow
 - Arduino firmware for hardware I/O
 - MATLAB, Python, or similar tools for modeling, simulation, and LQR design as needed
 
@@ -78,7 +78,7 @@ This repository is still being organized. A likely structure is:
 |       +-- linear actuator speed calibration.xlsx
 |       `-- calibrate_linear_actuator/
 |           `-- calibrate_linear_actuator.ino
-+-- labview/         # LabVIEW project files and VIs
++-- software/        # Control interface code, such as LabVIEW, Python, or MATLAB
 +-- modeling/        # Models, simulations, and controller design scripts
 `-- README.md
 ```
@@ -98,4 +98,4 @@ Project notes are tracked in:
 - Add CAD and STL files for the printed hardware structure.
 - Create an initial pendulum model.
 - Design and simulate the first LQR controller.
-- Define the LabVIEW-Arduino communication protocol.
+- Define the software-Arduino communication protocol.
