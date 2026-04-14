@@ -85,6 +85,10 @@ This repository is still being organized. A likely structure is:
 
 Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files.
 
+Project notes are tracked in:
+
+- `docs/project_log.md`
+
 ## Next Steps
 
 - Document the physical setup and available sensors.
