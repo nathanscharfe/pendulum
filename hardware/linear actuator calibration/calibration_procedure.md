@@ -58,3 +58,7 @@ Use this equation to convert a desired actuator speed into the delay value sent 
 - The equation should only be trusted over the speed and delay range covered by the calibration data.
 - If the actuator, driver settings, power supply, load, belt drive, or microstepping settings change, the calibration should be repeated.
 - The calibration data was collected using `5000` step moves, so future verification tests should start with the same move length before changing the test setup.
+
+## Calibration Setup Photo
+
+![Initial linear actuator calibration setup](images/initial_calibration_setup.jpg)
