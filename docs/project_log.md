@@ -22,16 +22,24 @@ Completed:
   - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
 - Added initial optical limit sensor reader firmware:
   - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
+- Added Arduino #1 linear actuator controller firmware:
+  - `hardware/linear actuator control/linear_actuator_controller/linear_actuator_controller.ino`
+- Organized the current bench setup photo:
+  - `docs/images/assembled_pendulum_bench_setup_2026-04-16.jpg`
 - Tested the AS5600 magnetic encoder example with Arduino. The encoder connects over I2C and returns smooth angle readings.
 - Assembled the pendulum using the 3D printed parts made today.
 - Tested both optical actuator limit sensors with Arduino. Brown is wired to `5V`, blue to `GND`, black to the Arduino input, and white is disconnected for the current setup.
+- Tested the Arduino #1 linear actuator controller firmware successfully.
 
 Notes:
 
+- Current hardware I/O is split across three Arduinos: Arduino #1 controls actuator motion, Arduino #2 reads the optical limit sensors, and Arduino #3 reads the AS5600 magnetic encoder.
 - The new STL files are printable exports. Editable CAD source files still need to be added if they are available.
 - The AS5600 example sketch is stored under `hardware/magnetic encoder/as5600_example/AS5600_demo/`.
 - The pendulum angle reader streams CSV angle data at `115200` baud and supports Serial commands for zeroing and wrap-tracking reset.
 - The limit sensor reader uses brown to Arduino `5V`, blue to `GND`, black as the Arduino input signal, and white disconnected. The two tested limit sensor inputs are Arduino `D2` and `D3`.
+- The linear actuator controller uses `D10` for step, `D11` for direction, and `D12` for active-low enable. It supports serial commands for enable, stop, relative moves, signed step rate, and signed calibrated actuator speed.
+- The current bench setup photo shows the assembled actuator and pendulum hardware with the in-progress three-Arduino layout.
 - During AS5600 testing, the status bits reported `magnet_detected = 0` and `magnet_too_weak = 1` even while angle readings were smooth. The observed diagnostic values included `AGC = 255` and magnitude around `279`, so the magnet-strength flags should be treated as diagnostics until the mechanical magnet setup is finalized.
 - VS Code GitHub CLI commands need to be run outside the sandboxed shell to use the Windows keyring credentials.
 - GitHub issue #10, `Assemble pendulum with 3D printed parts`, is closed.
@@ -42,6 +50,7 @@ Next:
 - Add editable CAD source files if available.
 - Verify the encoder signal through the installed magnet/shaft geometry.
 - Build a robust wire harness for the actuator limit sensors.
+- Create a secure mount for the magnetic encoder Arduino.
 
 ## 2026-04-14
 

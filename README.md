@@ -17,16 +17,20 @@ Planned setup:
 
 - Pendulum
 - Linear actuator
-- Arduino
+- Arduino #1 for linear actuator stepper control
+- Arduino #2 for optical actuator limit sensors
+- Arduino #3 for AS5600 magnetic encoder angle sensing
 - Position and/or angle sensors
 - Computer running LabVIEW
 
 Current hardware-related files:
 
+- `docs/images/assembled_pendulum_bench_setup_2026-04-16.jpg`
 - `hardware/linear actuator calibration/calibration_procedure.md`
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
+- `hardware/linear actuator control/linear_actuator_controller/linear_actuator_controller.ino`
 - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
 - `hardware/magnetic encoder/as5600_example/README.md`
 - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
@@ -60,7 +64,7 @@ CAD reference photos and measurements should go in:
 Planned software stack:
 
 - LabVIEW, Python, MATLAB, or another suitable tool for the main control interface and experiment workflow
-- Arduino firmware for hardware I/O
+- Arduino firmware split across three boards: actuator motion, limit sensors, and magnetic encoder sensing
 - MATLAB, Python, or similar tools for modeling, simulation, and LQR design as needed
 
 ## Control Approach
@@ -92,6 +96,10 @@ This repository is still being organized. A likely structure is:
 |   |   +-- linear actuator speed calibration.xlsx
 |   |   `-- calibrate_linear_actuator/
 |   |       `-- calibrate_linear_actuator.ino
+|   +-- linear actuator control/
+|   |   `-- linear_actuator_controller/
+|   |       +-- README.md
+|   |       `-- linear_actuator_controller.ino
 |   +-- limit sensors/
 |   |   `-- limit_sensor_reader/
 |   |       +-- README.md
@@ -109,7 +117,11 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested.
+
+Current bench setup photo:
+
+- `docs/images/assembled_pendulum_bench_setup_2026-04-16.jpg`
 
 Project notes are tracked in:
 
@@ -123,6 +135,7 @@ Project notes are tracked in:
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Verify the encoder signal through the installed magnet/shaft geometry.
 - Build a robust wire harness for the actuator limit sensors.
+- Create a secure mount for the magnetic encoder Arduino.
 - Create an initial pendulum model.
 - Design and simulate the first LQR controller.
 - Define the software-Arduino communication protocol.
