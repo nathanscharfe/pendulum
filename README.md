@@ -104,7 +104,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts.
 
 Project notes are tracked in:
 
@@ -115,7 +115,8 @@ Project notes are tracked in:
 - Document the physical setup and available sensors.
 - Decide what states will be measured or estimated.
 - Add editable CAD source files if they are available.
-- Print and test-fit the current STL parts.
+- Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
+- Verify the encoder signal through the installed magnet/shaft geometry.
 - Create an initial pendulum model.
 - Design and simulate the first LQR controller.
 - Define the software-Arduino communication protocol.
