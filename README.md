@@ -27,10 +27,13 @@ Current hardware-related files:
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
+- `hardware/magnetic encoder/as5600_example/README.md`
+- `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
 - `hardware/cad/stl/bearing mount.stl`
 - `hardware/cad/stl/encoder mount.stl`
 - `hardware/cad/stl/pendulum hinge.stl`
 - `hardware/cad/stl/weight attachment.stl`
+- `hardware/cad/stl/weight attachment - threaded.stl`
 - `hardware/cad/reference/linear actuator stage holes.jpg`
 
 The linear actuator calibration notebook fits the measured actuator data and gives a command equation for converting desired speed into the required delay:
@@ -82,12 +85,18 @@ This repository is still being organized. A likely structure is:
 |   |   +-- reference/  # CAD reference photos and measurements
 |   |   +-- source/  # Editable CAD files
 |   |   `-- stl/     # 3D-printable STL exports
-|   `-- linear actuator calibration/
-|       +-- actuator_speed_fit.ipynb
-|       +-- calibration_procedure.md
-|       +-- linear actuator speed calibration.xlsx
-|       `-- calibrate_linear_actuator/
-|           `-- calibrate_linear_actuator.ino
+|   +-- linear actuator calibration/
+|   |   +-- actuator_speed_fit.ipynb
+|   |   +-- calibration_procedure.md
+|   |   +-- linear actuator speed calibration.xlsx
+|   |   `-- calibrate_linear_actuator/
+|   |       `-- calibrate_linear_actuator.ino
+|   `-- magnetic encoder/
+|       +-- as5600_example/
+|       |   `-- README.md
+|       `-- pendulum_angle_reader/
+|           +-- README.md
+|           `-- pendulum_angle_reader.ino
 +-- software/        # Control interface code, such as LabVIEW, Python, or MATLAB
 +-- modeling/        # Models, simulations, and controller design scripts
 `-- README.md

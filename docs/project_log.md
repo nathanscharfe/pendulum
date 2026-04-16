@@ -11,21 +11,30 @@ Completed:
   - `hardware/cad/stl/encoder mount.stl`
   - `hardware/cad/stl/pendulum hinge.stl`
   - `hardware/cad/stl/weight attachment.stl`
+  - `hardware/cad/stl/weight attachment - threaded.stl`
 - Added a linear actuator stage hole-pattern reference photo:
   - `hardware/cad/reference/linear actuator stage holes.jpg`
 - Updated the README with the current CAD file list and the `hardware/cad/reference/` convention.
 - Resolved the local documentation next-step item to add initial CAD/STL files for the printed hardware structure.
+- Added a placeholder folder for AS5600 magnetic encoder Arduino example code:
+  - `hardware/magnetic encoder/as5600_example/`
+- Added AS5600 pendulum angle reader firmware:
+  - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
+- Tested the AS5600 magnetic encoder example with Arduino. The encoder connects over I2C and returns smooth angle readings.
 
 Notes:
 
 - The new STL files are printable exports. Editable CAD source files still need to be added if they are available.
-- GitHub issue review could not be completed from this shell because `gh issue list` returned `HTTP 401: Requires authentication`.
+- The AS5600 example sketch is stored under `hardware/magnetic encoder/as5600_example/AS5600_demo/`.
+- The pendulum angle reader streams CSV angle data at `115200` baud and supports Serial commands for zeroing and wrap-tracking reset.
+- During AS5600 testing, the status bits reported `magnet_detected = 0` and `magnet_too_weak = 1` even while angle readings were smooth. The observed diagnostic values included `AGC = 255` and magnitude around `279`, so the magnet-strength flags should be treated as diagnostics until the mechanical magnet setup is finalized.
+- VS Code GitHub CLI commands need to be run outside the sandboxed shell to use the Windows keyring credentials.
 
 Next:
 
 - Print and test-fit the bearing mount, encoder mount, pendulum hinge, and weight attachment.
 - Add editable CAD source files if available.
-- Re-authenticate GitHub CLI if issue management is needed from this machine.
+- Assemble the pendulum with the printed parts and verify the encoder signal through the installed magnet/shaft geometry.
 
 ## 2026-04-14
 
