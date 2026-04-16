@@ -1,5 +1,32 @@
 # Project Log
 
+## 2026-04-16
+
+Added initial printable hardware assets and CAD reference material.
+
+Completed:
+
+- Added 3D-printable STL exports under `hardware/cad/stl/`:
+  - `hardware/cad/stl/bearing mount.stl`
+  - `hardware/cad/stl/encoder mount.stl`
+  - `hardware/cad/stl/pendulum hinge.stl`
+  - `hardware/cad/stl/weight attachment.stl`
+- Added a linear actuator stage hole-pattern reference photo:
+  - `hardware/cad/reference/linear actuator stage holes.jpg`
+- Updated the README with the current CAD file list and the `hardware/cad/reference/` convention.
+- Resolved the local documentation next-step item to add initial CAD/STL files for the printed hardware structure.
+
+Notes:
+
+- The new STL files are printable exports. Editable CAD source files still need to be added if they are available.
+- GitHub issue review could not be completed from this shell because `gh issue list` returned `HTTP 401: Requires authentication`.
+
+Next:
+
+- Print and test-fit the bearing mount, encoder mount, pendulum hinge, and weight attachment.
+- Add editable CAD source files if available.
+- Re-authenticate GitHub CLI if issue management is needed from this machine.
+
 ## 2026-04-14
 
 Initial project organization and calibration setup.
@@ -38,6 +65,7 @@ Notes:
 
 - 3D-printable STL files should go in `hardware/cad/stl/`.
 - Editable CAD source files should go in `hardware/cad/source/`.
+- CAD reference photos and measurements should go in `hardware/cad/reference/`.
 - PowerShell currently prints a profile script warning because script execution is disabled, but Git and GitHub CLI are working.
 
 Next:

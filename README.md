@@ -27,6 +27,11 @@ Current hardware-related files:
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
+- `hardware/cad/stl/bearing mount.stl`
+- `hardware/cad/stl/encoder mount.stl`
+- `hardware/cad/stl/pendulum hinge.stl`
+- `hardware/cad/stl/weight attachment.stl`
+- `hardware/cad/reference/linear actuator stage holes.jpg`
 
 The linear actuator calibration notebook fits the measured actuator data and gives a command equation for converting desired speed into the required delay:
 
@@ -41,6 +46,10 @@ delay = 58399.75215056 / (speed + 0.00022846) - 3.82116746
 Editable CAD source files, if used, should go in:
 
 - `hardware/cad/source/`
+
+CAD reference photos and measurements should go in:
+
+- `hardware/cad/reference/`
 
 ## Software
 
@@ -70,6 +79,7 @@ This repository is still being organized. A likely structure is:
 .
 +-- hardware/
 |   +-- cad/
+|   |   +-- reference/  # CAD reference photos and measurements
 |   |   +-- source/  # Editable CAD files
 |   |   `-- stl/     # 3D-printable STL exports
 |   `-- linear actuator calibration/
@@ -85,7 +95,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`.
 
 Project notes are tracked in:
 
@@ -95,7 +105,8 @@ Project notes are tracked in:
 
 - Document the physical setup and available sensors.
 - Decide what states will be measured or estimated.
-- Add CAD and STL files for the printed hardware structure.
+- Add editable CAD source files if they are available.
+- Print and test-fit the current STL parts.
 - Create an initial pendulum model.
 - Design and simulate the first LQR controller.
 - Define the software-Arduino communication protocol.
