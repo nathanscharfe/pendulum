@@ -20,14 +20,18 @@ Completed:
   - `hardware/magnetic encoder/as5600_example/`
 - Added AS5600 pendulum angle reader firmware:
   - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
+- Added initial optical limit sensor reader firmware:
+  - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
 - Tested the AS5600 magnetic encoder example with Arduino. The encoder connects over I2C and returns smooth angle readings.
 - Assembled the pendulum using the 3D printed parts made today.
+- Tested both optical actuator limit sensors with Arduino. Brown is wired to `5V`, blue to `GND`, black to the Arduino input, and white is disconnected for the current setup.
 
 Notes:
 
 - The new STL files are printable exports. Editable CAD source files still need to be added if they are available.
 - The AS5600 example sketch is stored under `hardware/magnetic encoder/as5600_example/AS5600_demo/`.
 - The pendulum angle reader streams CSV angle data at `115200` baud and supports Serial commands for zeroing and wrap-tracking reset.
+- The limit sensor reader uses brown to Arduino `5V`, blue to `GND`, black as the Arduino input signal, and white disconnected. The two tested limit sensor inputs are Arduino `D2` and `D3`.
 - During AS5600 testing, the status bits reported `magnet_detected = 0` and `magnet_too_weak = 1` even while angle readings were smooth. The observed diagnostic values included `AGC = 255` and magnitude around `279`, so the magnet-strength flags should be treated as diagnostics until the mechanical magnet setup is finalized.
 - VS Code GitHub CLI commands need to be run outside the sandboxed shell to use the Windows keyring credentials.
 - GitHub issue #10, `Assemble pendulum with 3D printed parts`, is closed.
@@ -37,6 +41,7 @@ Next:
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Add editable CAD source files if available.
 - Verify the encoder signal through the installed magnet/shaft geometry.
+- Build a robust wire harness for the actuator limit sensors.
 
 ## 2026-04-14
 

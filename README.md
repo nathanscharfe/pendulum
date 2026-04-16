@@ -27,6 +27,7 @@ Current hardware-related files:
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
+- `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
 - `hardware/magnetic encoder/as5600_example/README.md`
 - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
 - `hardware/cad/stl/bearing mount.stl`
@@ -91,6 +92,10 @@ This repository is still being organized. A likely structure is:
 |   |   +-- linear actuator speed calibration.xlsx
 |   |   `-- calibrate_linear_actuator/
 |   |       `-- calibrate_linear_actuator.ino
+|   +-- limit sensors/
+|   |   `-- limit_sensor_reader/
+|   |       +-- README.md
+|   |       `-- limit_sensor_reader.ino
 |   `-- magnetic encoder/
 |       +-- as5600_example/
 |       |   `-- README.md
@@ -104,7 +109,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs.
 
 Project notes are tracked in:
 
@@ -117,6 +122,7 @@ Project notes are tracked in:
 - Add editable CAD source files if they are available.
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Verify the encoder signal through the installed magnet/shaft geometry.
+- Build a robust wire harness for the actuator limit sensors.
 - Create an initial pendulum model.
 - Design and simulate the first LQR controller.
 - Define the software-Arduino communication protocol.
