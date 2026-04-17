@@ -42,6 +42,17 @@ Current hardware-related files:
 - `hardware/cad/stl/weight attachment - threaded.stl`
 - `hardware/cad/reference/linear actuator stage holes.jpg`
 
+Current modeling and control files:
+
+- `modeling/pendulum_actuator_derivation/README.md`
+- `modeling/pendulum_actuator_derivation/parameters.md`
+- `modeling/pendulum_actuator_derivation/inverted pendulum derivation.pdf`
+- `modeling/pendulum_actuator_derivation/lqr_first_pass.m`
+- `modeling/pendulum_actuator_derivation/lqr_first_pass_results.md`
+- `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.fig`
+- `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.png`
+- `modeling/pendulum_actuator_derivation/torque_diagram.svg`
+
 The linear actuator calibration notebook fits the measured actuator data and gives a command equation for converting desired speed into the required delay:
 
 ```text
@@ -118,7 +129,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\).
 
 Current bench setup photo:
 
@@ -135,6 +146,7 @@ Project notes are tracked in:
 - Add editable CAD source files if they are available.
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Verify the encoder signal through the installed magnet/shaft geometry.
-- Create an initial pendulum model.
-- Design and simulate the first LQR controller.
+- Refine physical parameter estimates for the pendulum and actuator.
+- Compare first-pass LQR acceleration commands against actuator limits.
+- Tune and validate the LQR controller in simulation.
 - Define the software-Arduino communication protocol.

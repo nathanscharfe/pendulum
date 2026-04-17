@@ -11,18 +11,32 @@ Completed:
 - Built the wire harness for the actuator limit sensors.
 - Marked the optical limit sensor reader firmware complete for the current setup.
 - Marked the AS5600 magnetic encoder reader firmware complete for the current setup.
+- Added first-pass pendulum-actuator modeling notes:
+  - `modeling/pendulum_actuator_derivation/README.md`
+  - `modeling/pendulum_actuator_derivation/parameters.md`
+  - `modeling/pendulum_actuator_derivation/inverted pendulum derivation.pdf`
+  - `modeling/pendulum_actuator_derivation/torque_diagram.svg`
+- Added and ran an initial MATLAB LQR simulation:
+  - `modeling/pendulum_actuator_derivation/lqr_first_pass.m`
+  - `modeling/pendulum_actuator_derivation/lqr_first_pass_results.md`
+  - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.fig`
+  - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.png`
 
 Notes:
 
 - The current sensing firmware remains split across Arduino #2 for the optical limit sensors and Arduino #3 for the AS5600 magnetic encoder.
+- The first-pass model treats the pendulum as a point mass with \(l = 0.510\ \text{m}\), measured from the pivot to the rough center of mass of the bob.
+- The initial LQR simulation used \(Q = \operatorname{diag}(1,\ 0.1,\ 50,\ 1)\) and \(R = 1\). The computed gain was \(K = [-1.0000,\ -2.0104,\ -29.1450,\ -6.5238]\).
+- The initial closed-loop simulation had peak commanded acceleration \(2.543\ \text{m/s}^2\) and peak cart displacement \(0.228\ \text{m}\). With approximately \(0.60\ \text{m}\) total actuator travel, the displacement is within the nominal centered travel range but leaves limited margin.
 
 Next:
 
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Add editable CAD source files if available.
 - Verify the encoder signal through the installed magnet/shaft geometry.
-- Create an initial pendulum model.
-- Design and simulate the first LQR controller.
+- Refine physical parameter estimates for the pendulum and actuator.
+- Compare first-pass LQR acceleration commands against actuator limits.
+- Tune and validate the LQR controller in simulation.
 - Define the software-Arduino communication protocol.
 
 ## 2026-04-16
