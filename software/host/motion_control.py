@@ -37,6 +37,7 @@ class MotionController:
         signed_speed = abs(speed_mm_s or self.config.default_speed_mm_s)
         if side == "left":
             signed_speed = -signed_speed
+        signed_step_rate = self.mm_s_to_steps_s(signed_speed)
         target_limit = "left_limit" if side == "left" else "right_limit"
 
         latest_limits = self._require_limits()
@@ -44,9 +45,9 @@ class MotionController:
             self._stop_and_zero_for_home(side)
             return
 
-        self._ensure_safe_direction(signed_speed, latest_limits)
+        self._ensure_safe_direction(signed_step_rate, latest_limits)
         self.actuator.enable()
-        self.actuator.set_speed_mm_s(signed_speed)
+        self.actuator.set_step_rate(signed_step_rate)
 
         deadline = monotonic() + timeout_s
         try:
@@ -57,7 +58,7 @@ class MotionController:
                     self.actuator.disable()
                     return
 
-                self._stop_if_wrong_limit_for_direction(signed_speed, latest_limits)
+                self._stop_if_wrong_limit_for_direction(signed_step_rate, latest_limits)
                 sleep(self.config.command_period_s)
         finally:
             self.actuator.stop_motion()
@@ -73,17 +74,24 @@ class MotionController:
         target_steps = self.mm_to_steps(target_mm)
         delta_steps = target_steps - current_steps
 
-        if delta_steps == 0:
+        speed = abs(speed_mm_s or self.config.default_speed_mm_s)
+        step_rate = abs(self.mm_s_to_steps_s(speed))
+        self.move_relative_steps(delta_steps, step_rate, timeout_s)
+
+    def move_relative_steps(self, steps: int, steps_per_second: float, timeout_s: float = 30.0) -> None:
+        if steps == 0:
             return
 
-        speed = abs(speed_mm_s or self.config.default_speed_mm_s)
-        delay_us = self.delay_us_from_speed(speed)
-        direction_speed = speed if delta_steps > 0 else -speed
+        if steps_per_second <= 0.0:
+            raise ValueError("steps_per_second must be positive")
+
+        delay_us = self.delay_us_from_step_rate(steps_per_second)
+        direction_rate = steps_per_second if steps > 0 else -steps_per_second
         latest_limits = self._require_limits()
-        self._ensure_safe_direction(direction_speed, latest_limits)
+        self._ensure_safe_direction(direction_rate, latest_limits)
 
         self.actuator.enable()
-        self.actuator.move_steps(delta_steps, delay_us)
+        self.actuator.move_steps(steps, delay_us)
         # The actuator firmware only streams status every 500 ms. Wait for a
         # fresh status line before allowing an old idle snapshot to end the move.
         sleep(0.75)
@@ -92,7 +100,7 @@ class MotionController:
         try:
             while monotonic() < deadline:
                 latest_limits = self._require_limits()
-                self._stop_if_wrong_limit_for_direction(direction_speed, latest_limits)
+                self._stop_if_wrong_limit_for_direction(direction_rate, latest_limits)
 
                 status = self._require_actuator_status()
                 if int(status.data["motion_mode"]) == 0:
@@ -103,20 +111,21 @@ class MotionController:
         finally:
             self.actuator.stop_motion()
 
-        raise TimeoutError(f"Timed out before reaching {target_mm:.3f} mm")
+        raise TimeoutError(f"Timed out before completing {steps} steps")
 
     def run_speed(self, speed_mm_s: float, duration_s: float | None = None) -> None:
         latest_limits = self._require_limits()
-        self._ensure_safe_direction(speed_mm_s, latest_limits)
+        step_rate = self.mm_s_to_steps_s(speed_mm_s)
+        self._ensure_safe_direction(step_rate, latest_limits)
 
         self.actuator.enable()
-        self.actuator.set_speed_mm_s(speed_mm_s)
+        self.actuator.set_step_rate(step_rate)
 
         start = monotonic()
         try:
             while True:
                 latest_limits = self._require_limits()
-                self._stop_if_wrong_limit_for_direction(speed_mm_s, latest_limits)
+                self._stop_if_wrong_limit_for_direction(step_rate, latest_limits)
 
                 if duration_s is not None and (monotonic() - start) >= duration_s:
                     return
@@ -134,21 +143,23 @@ class MotionController:
     def steps_to_mm(self, value_steps: int) -> float:
         return value_steps / self.config.steps_per_mm
 
-    def delay_us_from_speed(self, speed_mm_s: float) -> int:
-        # Same fit used by the Arduino firmware. Host computes this for finite relative moves.
-        speed = abs(speed_mm_s)
-        if speed <= 0.0:
-            raise ValueError("speed_mm_s must be nonzero")
+    def mm_s_to_steps_s(self, value_mm_s: float) -> float:
+        return value_mm_s * self.config.steps_per_mm
 
-        delay_us = 58399.75215056 / (speed + 0.00022846) - 3.82116746
+    def delay_us_from_speed(self, speed_mm_s: float) -> int:
+        return self.delay_us_from_step_rate(abs(self.mm_s_to_steps_s(speed_mm_s)))
+
+    def delay_us_from_step_rate(self, steps_per_second: float) -> int:
+        if steps_per_second <= 0.0:
+            raise ValueError("steps_per_second must be positive")
+
+        delay_us = 500000.0 / steps_per_second
         return max(10, min(10000, round(delay_us)))
 
     def _stop_and_zero_for_home(self, side: str) -> None:
         self.actuator.stop_motion()
         if side == "left":
             self.actuator.set_position_steps(0)
-        else:
-            self.actuator.set_position_steps(self.config.travel_steps)
 
     def _ensure_safe_direction(self, speed_mm_s: float, latest_limits: SerialSnapshot) -> None:
         if speed_mm_s < 0 and latest_limits.data.get("left_limit"):

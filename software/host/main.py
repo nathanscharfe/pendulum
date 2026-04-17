@@ -37,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
     move.add_argument("--speed-mm-s", type=float, default=25.0)
     move.add_argument("--timeout", type=float, default=30.0)
 
+    move_steps = subparsers.add_parser("move-steps", help="Move a relative number of raw actuator steps.")
+    move_steps.add_argument("steps", type=int)
+    move_steps.add_argument("--steps-per-second", type=float, default=100.0)
+    move_steps.add_argument("--timeout", type=float, default=30.0)
+
     speed = subparsers.add_parser("speed", help="Run a signed speed command with host-side limit protection.")
     speed.add_argument("speed_mm_s", type=float)
     speed.add_argument("--duration", type=float, required=True)
@@ -86,7 +91,7 @@ def print_motion_status(actuator: ActuatorController | None, limits: LimitSensor
 
 
 def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, motion: MotionController) -> int:
-    print("Interactive motion shell. Commands: status, home left|right, move <mm>, speed <mm/s> <s>, stop, quit")
+    print("Interactive motion shell. Commands: status, home left|right, move <mm>, steps <steps>, speed <mm/s> <s>, stop, quit")
 
     while True:
         try:
@@ -135,6 +140,16 @@ def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, mo
                 speed = float(parts[2]) if len(parts) >= 3 else motion.config.default_speed_mm_s
                 motion.move_to_mm(target_mm, speed_mm_s=speed)
                 print("move complete")
+                continue
+
+            if command == "steps":
+                if len(parts) < 2:
+                    print("usage: steps <relative_steps> [steps_per_second]")
+                    continue
+                steps = int(parts[1])
+                steps_per_second = float(parts[2]) if len(parts) >= 3 else 100.0
+                motion.move_relative_steps(steps, steps_per_second)
+                print("step move complete")
                 continue
 
             if command == "speed":
@@ -202,6 +217,8 @@ def main() -> int:
                     motion.home(side=args.side, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
                 elif command == "move-mm":
                     motion.move_to_mm(args.target_mm, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
+                elif command == "move-steps":
+                    motion.move_relative_steps(args.steps, args.steps_per_second, timeout_s=args.timeout)
                 elif command == "speed":
                     motion.run_speed(args.speed_mm_s, duration_s=args.duration)
                 else:

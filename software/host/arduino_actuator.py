@@ -29,9 +29,6 @@ class ActuatorController(SerialWorker):
     def set_step_rate(self, steps_per_second: float) -> None:
         self.write_command(f"r {steps_per_second:.6g}")
 
-    def set_speed_mm_s(self, speed_mm_s: float) -> None:
-        self.write_command(f"v {speed_mm_s:.6g}")
-
     def parse_line(self, line: str) -> dict[str, Any] | None:
         if line == "status,time_ms,enabled,motion_mode,position_steps,remaining_move_steps,direction,step_delay_us":
             return None

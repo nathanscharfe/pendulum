@@ -18,7 +18,6 @@
 //   p <steps>                 set current position estimate
 //   m <steps> <delay_us>      relative move by step count
 //   r <steps_per_second>      continuous signed step-rate command
-//   v <mm_per_second>         continuous signed speed command using calibration fit
 
 const byte STEP_PIN = 10;
 const byte DIR_PIN = 11;
@@ -32,14 +31,6 @@ const byte DIR_NEGATIVE_LEVEL = LOW;
 const unsigned long SERIAL_BAUD = 115200;
 const unsigned int MIN_STEP_DELAY_US = 10;
 const unsigned int MAX_STEP_DELAY_US = 10000;
-
-// Calibration from hardware/linear actuator calibration/actuator_speed_fit.ipynb
-// delay_us = A / (speed_mm_s - C) - B
-// The fitted equation is documented as:
-// delay = 58399.75215056 / (speed + 0.00022846) - 3.82116746
-const float SPEED_FIT_A = 58399.75215056f;
-const float SPEED_FIT_B = 3.82116746f;
-const float SPEED_FIT_C = -0.00022846f;
 
 enum MotionMode
 {
@@ -119,19 +110,6 @@ unsigned int delayFromStepRate(float stepsPerSecond)
   return clampDelayUs((long)(delayUs + 0.5f));
 }
 
-unsigned int delayFromSpeed(float speedMmPerSecond)
-{
-  float absSpeed = fabs(speedMmPerSecond);
-
-  if (absSpeed <= 0.0f)
-  {
-    return MAX_STEP_DELAY_US;
-  }
-
-  float delayUs = SPEED_FIT_A / (absSpeed - SPEED_FIT_C) - SPEED_FIT_B;
-  return clampDelayUs((long)(delayUs + 0.5f));
-}
-
 void beginRelativeMove(long steps, unsigned int delayUs)
 {
   if (steps == 0)
@@ -167,23 +145,6 @@ void beginContinuousStepRate(float stepsPerSecond)
   setDriverEnabled(true);
 }
 
-void beginContinuousSpeed(float speedMmPerSecond)
-{
-  if (speedMmPerSecond == 0.0f)
-  {
-    stopMotion();
-    return;
-  }
-
-  setDirection(speedMmPerSecond > 0.0f ? 1 : -1);
-  stepDelayUs = delayFromSpeed(speedMmPerSecond);
-  completeMoveAfterPulse = false;
-  motionMode = MOTION_CONTINUOUS;
-  forceStepLow();
-  lastStepToggleUs = micros();
-  setDriverEnabled(true);
-}
-
 void printHelp()
 {
   Serial.println("# linear_actuator_controller");
@@ -196,7 +157,6 @@ void printHelp()
   Serial.println("# p <steps>                 set current position estimate");
   Serial.println("# m <steps> <delay_us>      relative move by step count");
   Serial.println("# r <steps_per_second>      continuous signed step-rate command");
-  Serial.println("# v <mm_per_second>         continuous signed calibrated speed command");
 }
 
 void printStatus()
@@ -323,20 +283,6 @@ void executeCommand(char *line)
 
     beginContinuousStepRate(atof(rateArg));
     printAck("step_rate_started");
-    return;
-  }
-
-  if (strcmp(command, "v") == 0 || strcmp(command, "V") == 0)
-  {
-    char *speedArg = strtok(NULL, " ,\t\r\n");
-    if (speedArg == NULL)
-    {
-      printError("missing_mm_per_second");
-      return;
-    }
-
-    beginContinuousSpeed(atof(speedArg));
-    printAck("speed_started");
     return;
   }
 

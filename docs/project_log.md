@@ -46,6 +46,8 @@ Notes:
 - Left homing while already at the left limit correctly set the actuator position estimate to zero, and a subsequent `move-mm 50 --speed-mm-s 10` command moved off the left limit and stopped as expected.
 - The interactive host motion shell was tested with `home left 10`, `status`, `move 50 10`, `status`, and `quit` in one continuous serial session. The final status reported `position_steps = 532` and `position_mm = 50.008`.
 - After updating the host to disable the actuator driver after completed `home` and `move` commands, the shell workflow was repeated and ended with `enabled = False`, `motion_mode = 0`, `position_steps = 532`, and `position_mm = 50.008`.
+- After a right-limit test reported `position_mm` very close to the provisional `600 mm` travel estimate, the host and actuator firmware were adjusted so Arduino #1 only handles raw step and step-rate commands while millimeter conversion remains on the host side. The host now includes a raw `move-steps` command and `steps` shell command for calibration work.
+- Arduino #1 raw step commands were verified through the Arduino Serial Monitor after re-uploading the updated firmware. The Python host raw-step shell command was also verified: `steps 100 100` increased `position_steps` from `0` to `100`, and `steps -100 100` returned it to `0`.
 
 Next:
 
@@ -56,7 +58,7 @@ Next:
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
 - Bench-test host-side homing and absolute-position moves.
-- Define the full software-Arduino control-loop protocol.
+- Calibrate the actuator step-to-mm conversion using raw step moves and measured travel.
 
 ## 2026-04-16
 

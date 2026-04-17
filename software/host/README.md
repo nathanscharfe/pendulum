@@ -69,8 +69,9 @@ The host includes early motion commands with host-side limit-sensor checks. Curr
 
 - Negative actuator motion moves toward the left limit.
 - Positive actuator motion moves toward the right limit.
-- The actuator calibration is `5000 steps / 470 mm`, or about `10.638 steps/mm`.
-- The total travel is about `600 mm`.
+- The provisional actuator calibration is `5000 steps / 470 mm`, or about `10.638 steps/mm`.
+- The total travel estimate of `600 mm` is provisional. For calibration, prefer raw step moves/counts and then update `--steps-per-mm`.
+- Arduino #1 receives raw step and step-rate commands. Millimeter conversion is handled on the host side.
 
 Home left:
 
@@ -82,6 +83,12 @@ Move to an absolute position after homing:
 
 ```powershell
 python -m software.host.main --actuator-port COM6 --limits-port COM10 move-mm 300 --speed-mm-s 25
+```
+
+Move a relative number of raw steps:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 move-steps 500 --steps-per-second 100
 ```
 
 Important: opening the actuator Arduino serial port resets the Arduino, so `position_steps` is not preserved across separate Python invocations. For homing, moving, and checking position in one continuous session, use the interactive shell:
@@ -96,6 +103,7 @@ Example shell session:
 motion> home left 10
 motion> status
 motion> move 50 10
+motion> steps 500 100
 motion> status
 motion> quit
 ```
@@ -117,6 +125,7 @@ Initial live motion smoke test:
 - Absolute move check: `python -m software.host.main --actuator-port COM6 --limits-port COM10 move-mm 50 --speed-mm-s 10` moved off the left limit and stopped as expected.
 - Interactive shell workflow check: `home left 10`, `status`, `move 50 10`, `status`, `quit` worked in one continuous serial session. The final status reported `position_steps = 532` and `position_mm = 50.008`.
 - After updating the host to disable the driver after completed `home` and `move` commands, the same shell workflow ended with `enabled = False`, `motion_mode = 0`, `position_steps = 532`, and `position_mm = 50.008`.
+- Raw step shell check: `steps 100 100` increased `position_steps` from `0` to `100`, and `steps -100 100` returned `position_steps` to `0`. The displayed `position_mm` came from the provisional host-side step-to-mm conversion.
 
 Stop immediately:
 

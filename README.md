@@ -140,7 +140,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks and raw step moves for calibration.
 
 Current bench setup photo:
 
@@ -161,4 +161,4 @@ Project notes are tracked in:
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
 - Bench-test host-side homing and absolute-position moves.
-- Define the full software-Arduino control-loop protocol.
+- Calibrate the actuator step-to-mm conversion using raw step moves and measured travel.

@@ -33,7 +33,6 @@ x                         stop motion immediately
 p <steps>                 set current position estimate
 m <steps> <delay_us>      relative move by step count
 r <steps_per_second>      continuous signed step-rate command
-v <mm_per_second>         continuous signed speed command using calibration fit
 ```
 
 Examples:
@@ -44,8 +43,6 @@ m 5000 100
 m -5000 100
 r 1000
 r -1000
-v 50
-v -50
 x
 e 0
 ```
@@ -64,15 +61,9 @@ status,time_ms,enabled,motion_mode,position_steps,remaining_move_steps,direction
 - `1`: relative move
 - `2`: continuous motion
 
-## Calibrated Speed Command
+## Host-Side Unit Conversion
 
-The `v <mm_per_second>` command uses the measured actuator calibration fit:
-
-```text
-delay_us = 58399.75215056 / (speed_mm_s + 0.00022846) - 3.82116746
-```
-
-The sign of the speed sets direction. The magnitude is converted to the step pulse delay.
+Arduino #1 accepts raw step commands and step-rate commands only. Physical-unit conversion, such as millimeters to steps or millimeters per second to steps per second, is handled by the host software.
 
 ## Safety Notes
 
