@@ -1,5 +1,30 @@
 # Project Log
 
+## 2026-04-17
+
+Continued hardware bring-up for the sensing electronics.
+
+Completed:
+
+- Created the mount for the magnetic encoder Arduino:
+  - `hardware/cad/stl/arduino mount.stl`
+- Built the wire harness for the actuator limit sensors.
+- Marked the optical limit sensor reader firmware complete for the current setup.
+- Marked the AS5600 magnetic encoder reader firmware complete for the current setup.
+
+Notes:
+
+- The current sensing firmware remains split across Arduino #2 for the optical limit sensors and Arduino #3 for the AS5600 magnetic encoder.
+
+Next:
+
+- Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
+- Add editable CAD source files if available.
+- Verify the encoder signal through the installed magnet/shaft geometry.
+- Create an initial pendulum model.
+- Design and simulate the first LQR controller.
+- Define the software-Arduino communication protocol.
+
 ## 2026-04-16
 
 Added initial printable hardware assets and CAD reference material.
@@ -49,8 +74,6 @@ Next:
 - Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
 - Add editable CAD source files if available.
 - Verify the encoder signal through the installed magnet/shaft geometry.
-- Build a robust wire harness for the actuator limit sensors.
-- Create a secure mount for the magnetic encoder Arduino.
 
 ## 2026-04-14
 
