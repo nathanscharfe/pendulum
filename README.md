@@ -62,6 +62,7 @@ Current host software files:
 - `software/host/arduino_actuator.py`
 - `software/host/arduino_limits.py`
 - `software/host/arduino_encoder.py`
+- `software/host/motion_control.py`
 
 The linear actuator calibration notebook fits the measured actuator data and gives a command equation for converting desired speed into the required delay:
 
@@ -139,7 +140,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks.
 
 Current bench setup photo:
 
@@ -159,5 +160,5 @@ Project notes are tracked in:
 - Refine physical parameter estimates for the pendulum and actuator.
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
-- Test the Python host serial interfaces with the three Arduino boards.
+- Bench-test host-side homing and absolute-position moves.
 - Define the full software-Arduino control-loop protocol.

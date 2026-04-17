@@ -7,6 +7,7 @@ from contextlib import ExitStack
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
+from .motion_control import MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
 
 
@@ -19,6 +20,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--poll-period", type=float, default=0.5, help="Seconds between printed snapshots.")
     parser.add_argument("--duration", type=float, help="Optional run duration in seconds.")
     parser.add_argument("--zero-encoder-on-start", action="store_true")
+    parser.add_argument("--steps-per-mm", type=float, default=5000.0 / 470.0)
+    parser.add_argument("--travel-mm", type=float, default=600.0)
+
+    subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("monitor", help="Read and print latest snapshots from configured Arduinos.")
+
+    home = subparsers.add_parser("home", help="Home the actuator toward a limit switch.")
+    home.add_argument("--side", choices=["left", "right"], default="left")
+    home.add_argument("--speed-mm-s", type=float, default=25.0)
+    home.add_argument("--timeout", type=float, default=30.0)
+
+    move = subparsers.add_parser("move-mm", help="Move to an absolute position in millimeters after homing.")
+    move.add_argument("target_mm", type=float)
+    move.add_argument("--speed-mm-s", type=float, default=25.0)
+    move.add_argument("--timeout", type=float, default=30.0)
+
+    speed = subparsers.add_parser("speed", help="Run a signed speed command with host-side limit protection.")
+    speed.add_argument("speed_mm_s", type=float)
+    speed.add_argument("--duration", type=float, required=True)
+
+    subparsers.add_parser("shell", help="Start an interactive motion shell without reopening serial ports between commands.")
+
+    stop = subparsers.add_parser("stop", help="Send an immediate actuator stop command.")
+    stop.set_defaults(command="stop")
+
     return parser
 
 
@@ -48,8 +75,87 @@ def print_snapshot(name: str, worker: SerialWorker | None) -> None:
         print(f"{name} error: {error}")
 
 
+def print_motion_status(actuator: ActuatorController | None, limits: LimitSensorReader | None, motion: MotionController | None) -> None:
+    print_snapshot("actuator", actuator)
+    print_snapshot("limits", limits)
+
+    latest = actuator.get_latest() if actuator is not None else None
+    if latest is not None and motion is not None:
+        position_steps = int(latest.data["position_steps"])
+        print(f"position_mm: {motion.steps_to_mm(position_steps):.3f}")
+
+
+def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, motion: MotionController) -> int:
+    print("Interactive motion shell. Commands: status, home left|right, move <mm>, speed <mm/s> <s>, stop, quit")
+
+    while True:
+        try:
+            command_line = input("motion> ").strip()
+        except EOFError:
+            command_line = "quit"
+        except KeyboardInterrupt:
+            print()
+            actuator.stop_motion()
+            continue
+
+        if not command_line:
+            continue
+
+        parts = command_line.split()
+        command = parts[0].lower()
+
+        try:
+            if command in {"quit", "exit"}:
+                actuator.stop_motion()
+                return 0
+
+            if command == "status":
+                actuator.request_status()
+                limits.request_state()
+                time.sleep(0.6)
+                print_motion_status(actuator, limits, motion)
+                continue
+
+            if command == "stop":
+                actuator.stop_motion()
+                continue
+
+            if command == "home":
+                side = parts[1] if len(parts) >= 2 else "left"
+                speed = float(parts[2]) if len(parts) >= 3 else motion.config.default_speed_mm_s
+                motion.home(side=side, speed_mm_s=speed)
+                print("home complete")
+                continue
+
+            if command == "move":
+                if len(parts) < 2:
+                    print("usage: move <target_mm> [speed_mm_s]")
+                    continue
+                target_mm = float(parts[1])
+                speed = float(parts[2]) if len(parts) >= 3 else motion.config.default_speed_mm_s
+                motion.move_to_mm(target_mm, speed_mm_s=speed)
+                print("move complete")
+                continue
+
+            if command == "speed":
+                if len(parts) < 3:
+                    print("usage: speed <speed_mm_s> <duration_s>")
+                    continue
+                speed = float(parts[1])
+                duration = float(parts[2])
+                motion.run_speed(speed, duration_s=duration)
+                print("speed command complete")
+                continue
+
+            print(f"unknown command: {command}")
+
+        except (MotionSafetyError, TimeoutError, ValueError) as exc:
+            print(f"Motion command failed: {exc}")
+
+
 def main() -> int:
     args = build_parser().parse_args()
+    command = args.command or "monitor"
 
     actuator = ActuatorController(args.actuator_port, args.baudrate) if args.actuator_port else None
     limits = LimitSensorReader(args.limits_port, args.baudrate) if args.limits_port else None
@@ -72,6 +178,39 @@ def main() -> int:
             limits.request_state()
         if encoder is not None and args.zero_encoder_on_start:
             encoder.zero_current_position()
+
+        motion_config = MotionConfig(steps_per_mm=args.steps_per_mm, travel_mm=args.travel_mm)
+        motion = MotionController(actuator, limits, motion_config) if actuator is not None and limits is not None else None
+
+        if command != "monitor":
+            if command == "stop":
+                if actuator is None:
+                    print("--actuator-port is required for stop")
+                    return 2
+                actuator.stop_motion()
+                return 0
+
+            if motion is None:
+                print("--actuator-port and --limits-port are required for motion commands")
+                return 2
+
+            if command == "shell":
+                return run_motion_shell(actuator, limits, motion)
+
+            try:
+                if command == "home":
+                    motion.home(side=args.side, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
+                elif command == "move-mm":
+                    motion.move_to_mm(args.target_mm, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
+                elif command == "speed":
+                    motion.run_speed(args.speed_mm_s, duration_s=args.duration)
+                else:
+                    raise RuntimeError(f"unknown command {command}")
+            except (MotionSafetyError, TimeoutError, ValueError) as exc:
+                print(f"Motion command failed: {exc}")
+                return 1
+
+            return 0
 
         start_time = time.monotonic()
         next_print = start_time

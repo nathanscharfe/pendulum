@@ -29,6 +29,8 @@ Completed:
   - `software/host/arduino_actuator.py`
   - `software/host/arduino_limits.py`
   - `software/host/arduino_encoder.py`
+- Added basic host-side actuator motion commands with limit-sensor checks:
+  - `software/host/motion_control.py`
 
 Notes:
 
@@ -38,6 +40,12 @@ Notes:
 - The initial closed-loop simulation had peak commanded acceleration \(2.543\ \text{m/s}^2\) and peak cart displacement \(0.228\ \text{m}\). With approximately \(0.60\ \text{m}\) total actuator travel, the displacement is within the nominal centered travel range but leaves limited margin.
 - The initial host software uses one background serial worker per Arduino interface. The actuator interface includes command helpers, while the limit sensor and encoder interfaces continuously parse the latest streamed sample.
 - The Python host monitor was tested with the current bench COM-port assignment: actuator on `COM6`, limit sensors on `COM10`, and encoder on `COM8`. It successfully read live status/data from all three Arduinos, and `Ctrl+C` shut down the monitor as expected.
+- The host motion layer assumes the actuator calibration `5000 steps / 470 mm`, about `10.638 steps/mm`, and total travel about `600 mm`. Negative motion is assumed to travel toward the left limit, and positive motion toward the right limit.
+- A cautious live host motion smoke test worked as expected using `python -m software.host.main --actuator-port COM6 --limits-port COM10 speed 5 --duration 1`.
+- Direction signs were confirmed. Positive host speed moves away from the left limit, and negative host speed moves toward the left limit. A negative speed command was correctly refused while the left limit was already active.
+- Left homing while already at the left limit correctly set the actuator position estimate to zero, and a subsequent `move-mm 50 --speed-mm-s 10` command moved off the left limit and stopped as expected.
+- The interactive host motion shell was tested with `home left 10`, `status`, `move 50 10`, `status`, and `quit` in one continuous serial session. The final status reported `position_steps = 532` and `position_mm = 50.008`.
+- After updating the host to disable the actuator driver after completed `home` and `move` commands, the shell workflow was repeated and ended with `enabled = False`, `motion_mode = 0`, `position_steps = 532`, and `position_mm = 50.008`.
 
 Next:
 
@@ -47,6 +55,7 @@ Next:
 - Refine physical parameter estimates for the pendulum and actuator.
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
+- Bench-test host-side homing and absolute-position moves.
 - Define the full software-Arduino control-loop protocol.
 
 ## 2026-04-16
