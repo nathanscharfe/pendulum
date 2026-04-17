@@ -21,6 +21,14 @@ Completed:
   - `modeling/pendulum_actuator_derivation/lqr_first_pass_results.md`
   - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.fig`
   - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.png`
+- Added an initial Python host software scaffold:
+  - `software/host/README.md`
+  - `software/host/requirements.txt`
+  - `software/host/main.py`
+  - `software/host/serial_worker.py`
+  - `software/host/arduino_actuator.py`
+  - `software/host/arduino_limits.py`
+  - `software/host/arduino_encoder.py`
 
 Notes:
 
@@ -28,6 +36,8 @@ Notes:
 - The first-pass model treats the pendulum as a point mass with \(l = 0.510\ \text{m}\), measured from the pivot to the rough center of mass of the bob.
 - The initial LQR simulation used \(Q = \operatorname{diag}(1,\ 0.1,\ 50,\ 1)\) and \(R = 1\). The computed gain was \(K = [-1.0000,\ -2.0104,\ -29.1450,\ -6.5238]\).
 - The initial closed-loop simulation had peak commanded acceleration \(2.543\ \text{m/s}^2\) and peak cart displacement \(0.228\ \text{m}\). With approximately \(0.60\ \text{m}\) total actuator travel, the displacement is within the nominal centered travel range but leaves limited margin.
+- The initial host software uses one background serial worker per Arduino interface. The actuator interface includes command helpers, while the limit sensor and encoder interfaces continuously parse the latest streamed sample.
+- The Python host monitor was tested with the current bench COM-port assignment: actuator on `COM6`, limit sensors on `COM10`, and encoder on `COM8`. It successfully read live status/data from all three Arduinos, and `Ctrl+C` shut down the monitor as expected.
 
 Next:
 
@@ -37,7 +47,7 @@ Next:
 - Refine physical parameter estimates for the pendulum and actuator.
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
-- Define the software-Arduino communication protocol.
+- Define the full software-Arduino control-loop protocol.
 
 ## 2026-04-16
 
