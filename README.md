@@ -63,6 +63,7 @@ Current host software files:
 - `software/host/arduino_limits.py`
 - `software/host/arduino_encoder.py`
 - `software/host/motion_control.py`
+- `software/host/travel_calibration.py`
 
 The linear actuator calibration notebook fits the measured actuator data and gives a command equation for converting desired speed into the required delay:
 

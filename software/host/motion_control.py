@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from time import monotonic, sleep
+from time import sleep
 
 from .arduino_actuator import ActuatorController
 from .arduino_limits import LimitSensorReader
@@ -32,7 +32,7 @@ class MotionController:
         self.limits = limits
         self.config = config or MotionConfig()
 
-    def home(self, side: str = "left", speed_mm_s: float | None = None, timeout_s: float = 30.0) -> None:
+    def home(self, side: str = "left", speed_mm_s: float | None = None) -> None:
         side = self._normalize_side(side)
         signed_speed = abs(speed_mm_s or self.config.default_speed_mm_s)
         if side == "left":
@@ -49,9 +49,8 @@ class MotionController:
         self.actuator.enable()
         self.actuator.set_step_rate(signed_step_rate)
 
-        deadline = monotonic() + timeout_s
         try:
-            while monotonic() < deadline:
+            while True:
                 latest_limits = self._require_limits()
                 if latest_limits.data.get(target_limit):
                     self._stop_and_zero_for_home(side)
@@ -63,9 +62,7 @@ class MotionController:
         finally:
             self.actuator.stop_motion()
 
-        raise TimeoutError(f"Timed out before reaching {side} home limit")
-
-    def move_to_mm(self, target_mm: float, speed_mm_s: float | None = None, timeout_s: float = 30.0) -> None:
+    def move_to_mm(self, target_mm: float, speed_mm_s: float | None = None) -> None:
         if target_mm < 0.0 or target_mm > self.config.travel_mm:
             raise ValueError(f"target_mm must be in [0, {self.config.travel_mm}]")
 
@@ -76,9 +73,15 @@ class MotionController:
 
         speed = abs(speed_mm_s or self.config.default_speed_mm_s)
         step_rate = abs(self.mm_s_to_steps_s(speed))
-        self.move_relative_steps(delta_steps, step_rate, timeout_s)
+        self.move_relative_steps(delta_steps, step_rate)
 
-    def move_relative_steps(self, steps: int, steps_per_second: float, timeout_s: float = 30.0) -> None:
+    def move_to_steps(self, target_steps: int, steps_per_second: float) -> None:
+        status = self._require_actuator_status()
+        current_steps = int(status.data["position_steps"])
+        delta_steps = target_steps - current_steps
+        self.move_relative_steps(delta_steps, abs(steps_per_second))
+
+    def move_relative_steps(self, steps: int, steps_per_second: float) -> None:
         if steps == 0:
             return
 
@@ -96,9 +99,8 @@ class MotionController:
         # fresh status line before allowing an old idle snapshot to end the move.
         sleep(0.75)
 
-        deadline = monotonic() + timeout_s
         try:
-            while monotonic() < deadline:
+            while True:
                 latest_limits = self._require_limits()
                 self._stop_if_wrong_limit_for_direction(direction_rate, latest_limits)
 
@@ -110,8 +112,6 @@ class MotionController:
                 sleep(self.config.command_period_s)
         finally:
             self.actuator.stop_motion()
-
-        raise TimeoutError(f"Timed out before completing {steps} steps")
 
     def run_speed(self, speed_mm_s: float, duration_s: float | None = None) -> None:
         latest_limits = self._require_limits()
@@ -160,6 +160,15 @@ class MotionController:
         self.actuator.stop_motion()
         if side == "left":
             self.actuator.set_position_steps(0)
+            self._wait_for_position_steps(0)
+
+    def _wait_for_position_steps(self, expected_steps: int) -> None:
+        while True:
+            self.actuator.request_status()
+            sleep(self.config.command_period_s)
+            latest = self.actuator.get_latest()
+            if latest is not None and int(latest.data["position_steps"]) == expected_steps:
+                return
 
     def _ensure_safe_direction(self, speed_mm_s: float, latest_limits: SerialSnapshot) -> None:
         if speed_mm_s < 0 and latest_limits.data.get("left_limit"):

@@ -3,12 +3,14 @@ from __future__ import annotations
 import argparse
 import time
 from contextlib import ExitStack
+from pathlib import Path
 
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
 from .motion_control import MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
+from .travel_calibration import DEFAULT_RELATIVE_STEPS, DEFAULT_SPEEDS_STEPS_S, run_travel_calibration
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,17 +32,26 @@ def build_parser() -> argparse.ArgumentParser:
     home = subparsers.add_parser("home", help="Home the actuator toward a limit switch.")
     home.add_argument("--side", choices=["left", "right"], default="left")
     home.add_argument("--speed-mm-s", type=float, default=25.0)
-    home.add_argument("--timeout", type=float, default=30.0)
 
     move = subparsers.add_parser("move-mm", help="Move to an absolute position in millimeters after homing.")
     move.add_argument("target_mm", type=float)
     move.add_argument("--speed-mm-s", type=float, default=25.0)
-    move.add_argument("--timeout", type=float, default=30.0)
 
     move_steps = subparsers.add_parser("move-steps", help="Move a relative number of raw actuator steps.")
     move_steps.add_argument("steps", type=int)
     move_steps.add_argument("--steps-per-second", type=float, default=100.0)
-    move_steps.add_argument("--timeout", type=float, default=30.0)
+
+    goto_steps = subparsers.add_parser("goto-steps", help="Move to an absolute raw actuator step position.")
+    goto_steps.add_argument("target_steps", type=int)
+    goto_steps.add_argument("--steps-per-second", type=float, default=100.0)
+
+    calibrate = subparsers.add_parser("calibrate-travel", help="Interactively collect tape-measure travel calibration data.")
+    calibrate.add_argument("--output", type=Path, help="CSV output path.")
+    calibrate.add_argument("--start-steps", type=int, default=100)
+    calibrate.add_argument("--speeds", type=float, nargs="+", default=list(DEFAULT_SPEEDS_STEPS_S))
+    calibrate.add_argument("--moves", type=int, nargs="+", default=list(DEFAULT_RELATIVE_STEPS))
+    calibrate.add_argument("--home-speed-mm-s", type=float, default=10.0)
+    calibrate.add_argument("--reposition-speed-steps-s", type=float, default=300.0)
 
     speed = subparsers.add_parser("speed", help="Run a signed speed command with host-side limit protection.")
     speed.add_argument("speed_mm_s", type=float)
@@ -91,7 +102,7 @@ def print_motion_status(actuator: ActuatorController | None, limits: LimitSensor
 
 
 def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, motion: MotionController) -> int:
-    print("Interactive motion shell. Commands: status, home left|right, move <mm>, steps <steps>, speed <mm/s> <s>, stop, quit")
+    print("Interactive motion shell. Commands: status, home left|right, move <mm>, steps <steps>, goto <steps>, speed <mm/s> <s>, stop, quit")
 
     while True:
         try:
@@ -152,6 +163,16 @@ def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, mo
                 print("step move complete")
                 continue
 
+            if command in {"goto", "goto-steps"}:
+                if len(parts) < 2:
+                    print("usage: goto <target_steps> [steps_per_second]")
+                    continue
+                target_steps = int(parts[1])
+                steps_per_second = float(parts[2]) if len(parts) >= 3 else 100.0
+                motion.move_to_steps(target_steps, steps_per_second)
+                print("absolute step move complete")
+                continue
+
             if command == "speed":
                 if len(parts) < 3:
                     print("usage: speed <speed_mm_s> <duration_s>")
@@ -164,7 +185,7 @@ def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, mo
 
             print(f"unknown command: {command}")
 
-        except (MotionSafetyError, TimeoutError, ValueError) as exc:
+        except (MotionSafetyError, ValueError) as exc:
             print(f"Motion command failed: {exc}")
 
 
@@ -214,16 +235,30 @@ def main() -> int:
 
             try:
                 if command == "home":
-                    motion.home(side=args.side, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
+                    motion.home(side=args.side, speed_mm_s=args.speed_mm_s)
                 elif command == "move-mm":
-                    motion.move_to_mm(args.target_mm, speed_mm_s=args.speed_mm_s, timeout_s=args.timeout)
+                    motion.move_to_mm(args.target_mm, speed_mm_s=args.speed_mm_s)
                 elif command == "move-steps":
-                    motion.move_relative_steps(args.steps, args.steps_per_second, timeout_s=args.timeout)
+                    motion.move_relative_steps(args.steps, args.steps_per_second)
+                elif command == "goto-steps":
+                    motion.move_to_steps(args.target_steps, args.steps_per_second)
+                elif command == "calibrate-travel":
+                    run_travel_calibration(
+                        actuator,
+                        limits,
+                        motion,
+                        output_path=args.output,
+                        start_steps=args.start_steps,
+                        speeds_steps_s=tuple(args.speeds),
+                        relative_steps=tuple(args.moves),
+                        home_speed_mm_s=args.home_speed_mm_s,
+                        reposition_speed_steps_s=args.reposition_speed_steps_s,
+                    )
                 elif command == "speed":
                     motion.run_speed(args.speed_mm_s, duration_s=args.duration)
                 else:
                     raise RuntimeError(f"unknown command {command}")
-            except (MotionSafetyError, TimeoutError, ValueError) as exc:
+            except (MotionSafetyError, ValueError) as exc:
                 print(f"Motion command failed: {exc}")
                 return 1
 

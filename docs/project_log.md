@@ -48,6 +48,10 @@ Notes:
 - After updating the host to disable the actuator driver after completed `home` and `move` commands, the shell workflow was repeated and ended with `enabled = False`, `motion_mode = 0`, `position_steps = 532`, and `position_mm = 50.008`.
 - After a right-limit test reported `position_mm` very close to the provisional `600 mm` travel estimate, the host and actuator firmware were adjusted so Arduino #1 only handles raw step and step-rate commands while millimeter conversion remains on the host side. The host now includes a raw `move-steps` command and `steps` shell command for calibration work.
 - Arduino #1 raw step commands were verified through the Arduino Serial Monitor after re-uploading the updated firmware. The Python host raw-step shell command was also verified: `steps 100 100` increased `position_steps` from `0` to `100`, and `steps -100 100` returned it to `0`.
+- Added an interactive host travel calibration routine:
+  - `software/host/travel_calibration.py`
+- An initial travel-calibration attempt exposed a stale actuator-status issue after homing. The host now waits for Arduino #1 to report `position_steps = 0` after left homing before continuing to the first calibration move. Empty CSV files from the interrupted attempts were not kept.
+- GitHub issue #21, `Run actuator travel calibration and fit step-to-mm conversion`, is open for rerunning the calibration and updating the host `steps_per_mm` value.
 
 Next:
 

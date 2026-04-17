@@ -91,6 +91,35 @@ Move a relative number of raw steps:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 move-steps 500 --steps-per-second 100
 ```
 
+Move to an absolute raw step position:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 goto-steps 2500 --steps-per-second 100
+```
+
+Run the interactive travel calibration routine:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 calibrate-travel
+```
+
+Default calibration routine:
+
+- Homes left.
+- Moves to the 100-step start position.
+- Prompts for the tape measure reading at the start position.
+- For each speed, `100`, `200`, and `300` steps/s:
+  - returns to the 100-step start position
+  - moves right by `6000`, `5000`, `4000`, `3000`, `2000`, and `1000` steps
+  - prompts for the tape measure reading after each move
+- Writes a CSV file under `hardware/linear actuator calibration/`.
+
+Calibration follow-up:
+
+- GitHub issue: #21, `Run actuator travel calibration and fit step-to-mm conversion`
+- An initial calibration attempt exposed a stale actuator-status issue after homing. The host now waits for Arduino #1 to confirm `position_steps = 0` after left homing before continuing.
+- Empty CSV files from the interrupted attempts were not kept.
+
 Important: opening the actuator Arduino serial port resets the Arduino, so `position_steps` is not preserved across separate Python invocations. For homing, moving, and checking position in one continuous session, use the interactive shell:
 
 ```powershell
@@ -104,6 +133,7 @@ motion> home left 10
 motion> status
 motion> move 50 10
 motion> steps 500 100
+motion> goto 2500 100
 motion> status
 motion> quit
 ```
@@ -135,4 +165,4 @@ python -m software.host.main --actuator-port COM6 stop
 
 ## Safety Note
 
-The host motion commands are still bench-test utilities, not the final closed-loop controller. The host refuses to start motion into an already-active limit and stops motion if the limit in the active travel direction becomes active.
+The host motion commands are still bench-test utilities, not the final closed-loop controller. The host refuses to start motion into an already-active limit and stops motion if the limit in the active travel direction becomes active. Finite moves wait until the actuator firmware reports completion; use `Ctrl+C` in the shell or the `stop` command if a move needs to be interrupted.
