@@ -70,7 +70,7 @@ The host includes early motion commands with host-side limit-sensor checks. Curr
 - Negative actuator motion moves toward the left limit.
 - Positive actuator motion moves toward the right limit.
 - The measured actuator travel calibration is `10.652 steps/mm`, or about `0.093879 mm/step`.
-- The total travel estimate of `600 mm` is provisional.
+- The total travel estimate is about `600 mm` with the current limit sensor placement. Limit sensor physics can still make the observed limit-to-limit distance vary slightly by run.
 - Arduino #1 receives raw step and step-rate commands. Millimeter conversion is handled on the host side.
 
 Home left:
@@ -83,6 +83,12 @@ Move to an absolute position after homing:
 
 ```powershell
 python -m software.host.main --actuator-port COM6 --limits-port COM10 move-mm 300 --speed-mm-s 25
+```
+
+Move to the configured midpoint after homing:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 middle --speed-mm-s 25
 ```
 
 Move a relative number of raw steps:
@@ -138,6 +144,7 @@ Example shell session:
 ```text
 motion> home left 10
 motion> status
+motion> middle 10
 motion> move 50 10
 motion> steps 500 100
 motion> goto 2500 100

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from time import sleep
+from time import monotonic, sleep
 
 from .arduino_actuator import ActuatorController
 from .arduino_limits import LimitSensorReader
@@ -77,6 +77,9 @@ class MotionController:
         speed = abs(speed_mm_s or self.config.default_speed_mm_s)
         step_rate = abs(self.mm_s_to_steps_s(speed))
         self.move_relative_steps(delta_steps, step_rate)
+
+    def move_to_middle(self, speed_mm_s: float | None = None) -> None:
+        self.move_to_mm(self.config.travel_mm / 2.0, speed_mm_s=speed_mm_s)
 
     def move_to_steps(self, target_steps: int, steps_per_second: float) -> None:
         status = self._require_actuator_status()

@@ -37,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     move.add_argument("target_mm", type=float)
     move.add_argument("--speed-mm-s", type=float, default=25.0)
 
+    middle = subparsers.add_parser("middle", help="Move to the configured midpoint after homing.")
+    middle.add_argument("--speed-mm-s", type=float, default=25.0)
+
     move_steps = subparsers.add_parser("move-steps", help="Move a relative number of raw actuator steps.")
     move_steps.add_argument("steps", type=int)
     move_steps.add_argument("--steps-per-second", type=float, default=100.0)
@@ -102,7 +105,7 @@ def print_motion_status(actuator: ActuatorController | None, limits: LimitSensor
 
 
 def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, motion: MotionController) -> int:
-    print("Interactive motion shell. Commands: status, home left|right, move <mm>, steps <steps>, goto <steps>, speed <mm/s> <s>, stop, quit")
+    print("Interactive motion shell. Commands: status, home left|right, middle, move <mm>, steps <steps>, goto <steps>, speed <mm/s> <s>, stop, quit")
 
     while True:
         try:
@@ -151,6 +154,12 @@ def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, mo
                 speed = float(parts[2]) if len(parts) >= 3 else motion.config.default_speed_mm_s
                 motion.move_to_mm(target_mm, speed_mm_s=speed)
                 print("move complete")
+                continue
+
+            if command in {"middle", "center"}:
+                speed = float(parts[1]) if len(parts) >= 2 else motion.config.default_speed_mm_s
+                motion.move_to_middle(speed_mm_s=speed)
+                print("middle move complete")
                 continue
 
             if command == "steps":
@@ -236,6 +245,8 @@ def main() -> int:
             try:
                 if command == "home":
                     motion.home(side=args.side, speed_mm_s=args.speed_mm_s)
+                elif command == "middle":
+                    motion.move_to_middle(speed_mm_s=args.speed_mm_s)
                 elif command == "move-mm":
                     motion.move_to_mm(args.target_mm, speed_mm_s=args.speed_mm_s)
                 elif command == "move-steps":
