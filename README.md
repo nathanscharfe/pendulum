@@ -29,6 +29,8 @@ Current hardware-related files:
 - `hardware/linear actuator calibration/calibration_procedure.md`
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
+- `hardware/linear actuator calibration/host_travel_calibration_20260417_194546.csv`
+- `hardware/linear actuator calibration/host_travel_calibration_results.md`
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
 - `hardware/linear actuator control/linear_actuator_controller/linear_actuator_controller.ino`
 - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
@@ -69,6 +71,14 @@ The linear actuator calibration notebook fits the measured actuator data and giv
 
 ```text
 delay = 58399.75215056 / (speed + 0.00022846) - 3.82116746
+```
+
+The host-side travel calibration uses the measured raw-step travel scale:
+
+```text
+steps_per_mm = 10.652
+position_mm = position_steps / 10.652
+target_steps = round(target_mm * 10.652)
 ```
 
 3D-printable solid model exports should go in:
@@ -141,7 +151,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The Arduino sketch used for collecting the actuator calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks and raw step moves for calibration.
+Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The host-side raw-step travel calibration has been collected and gives a default scale of `10.652 steps/mm`. The Arduino sketch used for collecting the actuator speed calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks and raw step moves for calibration.
 
 Current bench setup photo:
 
@@ -162,4 +172,3 @@ Project notes are tracked in:
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
 - Bench-test host-side homing and absolute-position moves.
-- Calibrate the actuator step-to-mm conversion using raw step moves and measured travel.

@@ -40,7 +40,7 @@ Notes:
 - The initial closed-loop simulation had peak commanded acceleration \(2.543\ \text{m/s}^2\) and peak cart displacement \(0.228\ \text{m}\). With approximately \(0.60\ \text{m}\) total actuator travel, the displacement is within the nominal centered travel range but leaves limited margin.
 - The initial host software uses one background serial worker per Arduino interface. The actuator interface includes command helpers, while the limit sensor and encoder interfaces continuously parse the latest streamed sample.
 - The Python host monitor was tested with the current bench COM-port assignment: actuator on `COM6`, limit sensors on `COM10`, and encoder on `COM8`. It successfully read live status/data from all three Arduinos, and `Ctrl+C` shut down the monitor as expected.
-- The host motion layer assumes the actuator calibration `5000 steps / 470 mm`, about `10.638 steps/mm`, and total travel about `600 mm`. Negative motion is assumed to travel toward the left limit, and positive motion toward the right limit.
+- The host motion layer uses the measured actuator travel calibration `10.652 steps/mm`, or about `0.093879 mm/step`, and the total travel estimate remains about `600 mm`. Negative motion is assumed to travel toward the left limit, and positive motion toward the right limit.
 - A cautious live host motion smoke test worked as expected using `python -m software.host.main --actuator-port COM6 --limits-port COM10 speed 5 --duration 1`.
 - Direction signs were confirmed. Positive host speed moves away from the left limit, and negative host speed moves toward the left limit. A negative speed command was correctly refused while the left limit was already active.
 - Left homing while already at the left limit correctly set the actuator position estimate to zero, and a subsequent `move-mm 50 --speed-mm-s 10` command moved off the left limit and stopped as expected.
@@ -51,7 +51,11 @@ Notes:
 - Added an interactive host travel calibration routine:
   - `software/host/travel_calibration.py`
 - An initial travel-calibration attempt exposed a stale actuator-status issue after homing. The host now waits for Arduino #1 to report `position_steps = 0` after left homing before continuing to the first calibration move. Empty CSV files from the interrupted attempts were not kept.
-- GitHub issue #21, `Run actuator travel calibration and fit step-to-mm conversion`, is open for rerunning the calibration and updating the host `steps_per_mm` value.
+- Updated the host travel calibration routine so each speed is selected interactively, the 100-step tape reading is confirmed before every move, and completed data is saved after each requested speed set.
+- Collected host travel calibration data:
+  - `hardware/linear actuator calibration/host_travel_calibration_20260417_194546.csv`
+  - `hardware/linear actuator calibration/host_travel_calibration_results.md`
+- Averaged the completed calibration rows to set the host default actuator scale to `10.652 steps/mm`.
 
 Next:
 
@@ -62,7 +66,6 @@ Next:
 - Compare first-pass LQR acceleration commands against actuator limits.
 - Tune and validate the LQR controller in simulation.
 - Bench-test host-side homing and absolute-position moves.
-- Calibrate the actuator step-to-mm conversion using raw step moves and measured travel.
 
 ## 2026-04-16
 

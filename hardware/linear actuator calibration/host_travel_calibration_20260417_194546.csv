@@ -1,0 +1,7 @@
+speed_steps_s,commanded_relative_steps,start_steps,actual_start_steps,target_steps,actual_position_steps,start_tape_reading_mm,tape_reading_mm,completed,note
+400.0,6000,100,100,6100,6100,599,35.5,True,
+400.0,5000,100,100,5100,5100,599,129.5,True,
+400.0,4000,100,100,4100,4100,599,223.5,True,
+400.0,3000,100,100,3100,3100,599,317.5,True,
+400.0,2000,100,100,2100,2100,599,411.5,True,
+400.0,1000,100,100,1100,1100,599,505,True,

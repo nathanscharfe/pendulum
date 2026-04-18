@@ -8,9 +8,12 @@ from .arduino_limits import LimitSensorReader
 from .serial_worker import SerialSnapshot
 
 
+DEFAULT_STEPS_PER_MM = 10.652
+
+
 @dataclass(frozen=True)
 class MotionConfig:
-    steps_per_mm: float = 5000.0 / 470.0
+    steps_per_mm: float = DEFAULT_STEPS_PER_MM
     travel_mm: float = 600.0
     default_speed_mm_s: float = 25.0
     command_period_s: float = 0.05

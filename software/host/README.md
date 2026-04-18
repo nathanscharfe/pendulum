@@ -60,7 +60,7 @@ Optional flags:
 - `--duration 10`: run for 10 seconds and exit.
 - `--zero-encoder-on-start`: send `z` to the encoder Arduino after opening the port.
 - `--poll-period 0.5`: print snapshots every 0.5 seconds.
-- `--steps-per-mm 10.638`: override the actuator position scale.
+- `--steps-per-mm 10.652`: override the actuator position scale.
 - `--travel-mm 600`: override the assumed actuator travel.
 
 ## Basic Motion Commands
@@ -69,8 +69,8 @@ The host includes early motion commands with host-side limit-sensor checks. Curr
 
 - Negative actuator motion moves toward the left limit.
 - Positive actuator motion moves toward the right limit.
-- The provisional actuator calibration is `5000 steps / 470 mm`, or about `10.638 steps/mm`.
-- The total travel estimate of `600 mm` is provisional. For calibration, prefer raw step moves/counts and then update `--steps-per-mm`.
+- The measured actuator travel calibration is `10.652 steps/mm`, or about `0.093879 mm/step`.
+- The total travel estimate of `600 mm` is provisional.
 - Arduino #1 receives raw step and step-rate commands. Millimeter conversion is handled on the host side.
 
 Home left:
@@ -106,13 +106,20 @@ python -m software.host.main --actuator-port COM6 --limits-port COM10 calibrate-
 Default calibration routine:
 
 - Homes left.
-- Moves to the 100-step start position.
-- Prompts for the tape measure reading at the start position.
-- For each speed, `100`, `200`, and `300` steps/s:
+- Prompts for the speed to run in steps/s.
+- For each move length, `6000`, `5000`, `4000`, `3000`, `2000`, and `1000` steps:
   - returns to the 100-step start position
-  - moves right by `6000`, `5000`, `4000`, `3000`, `2000`, and `1000` steps
-  - prompts for the tape measure reading after each move
+  - prompts for the tape measure reading at the 100-step start position
+  - moves right by the requested step count
+  - prompts for the tape measure reading after the move
+- After a speed is complete, asks whether to run another speed or quit and save.
 - Writes a CSV file under `hardware/linear actuator calibration/`.
+
+Optional queued speeds can be supplied up front:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 calibrate-travel --speeds 100 200 300
+```
 
 Calibration follow-up:
 

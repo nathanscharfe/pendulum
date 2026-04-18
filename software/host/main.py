@@ -8,9 +8,9 @@ from pathlib import Path
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
-from .motion_control import MotionConfig, MotionController, MotionSafetyError
+from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
-from .travel_calibration import DEFAULT_RELATIVE_STEPS, DEFAULT_SPEEDS_STEPS_S, run_travel_calibration
+from .travel_calibration import DEFAULT_RELATIVE_STEPS, run_travel_calibration
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--poll-period", type=float, default=0.5, help="Seconds between printed snapshots.")
     parser.add_argument("--duration", type=float, help="Optional run duration in seconds.")
     parser.add_argument("--zero-encoder-on-start", action="store_true")
-    parser.add_argument("--steps-per-mm", type=float, default=5000.0 / 470.0)
+    parser.add_argument("--steps-per-mm", type=float, default=DEFAULT_STEPS_PER_MM)
     parser.add_argument("--travel-mm", type=float, default=600.0)
 
     subparsers = parser.add_subparsers(dest="command")
@@ -48,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate = subparsers.add_parser("calibrate-travel", help="Interactively collect tape-measure travel calibration data.")
     calibrate.add_argument("--output", type=Path, help="CSV output path.")
     calibrate.add_argument("--start-steps", type=int, default=100)
-    calibrate.add_argument("--speeds", type=float, nargs="+", default=list(DEFAULT_SPEEDS_STEPS_S))
+    calibrate.add_argument("--speeds", type=float, nargs="+", help="Optional queued step rates. Omit to choose speeds interactively.")
     calibrate.add_argument("--moves", type=int, nargs="+", default=list(DEFAULT_RELATIVE_STEPS))
     calibrate.add_argument("--home-speed-mm-s", type=float, default=10.0)
     calibrate.add_argument("--reposition-speed-steps-s", type=float, default=300.0)
@@ -249,7 +249,7 @@ def main() -> int:
                         motion,
                         output_path=args.output,
                         start_steps=args.start_steps,
-                        speeds_steps_s=tuple(args.speeds),
+                        speeds_steps_s=tuple(args.speeds) if args.speeds is not None else None,
                         relative_steps=tuple(args.moves),
                         home_speed_mm_s=args.home_speed_mm_s,
                         reposition_speed_steps_s=args.reposition_speed_steps_s,
