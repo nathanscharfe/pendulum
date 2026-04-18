@@ -15,7 +15,7 @@ from .serial_worker import SerialSnapshot
 
 
 @dataclass(frozen=True)
-class DownwardControlConfig:
+class PendulumControlConfig:
     period_s: float = 0.05
     lqr_x_gain: float = 0.3162
     lqr_x_dot_gain: float = 0.8139
@@ -53,6 +53,25 @@ class DownwardControlConfig:
     move_middle_before_start: bool = True
     home_speed_mm_s: float = 50.0
     middle_speed_mm_s: float = 50.0
+
+
+@dataclass(frozen=True)
+class DownwardControlConfig(PendulumControlConfig):
+    pass
+
+
+@dataclass(frozen=True)
+class UprightControlConfig(PendulumControlConfig):
+    period_s: float = 0.01
+    lqr_x_gain: float = -1.0
+    lqr_x_dot_gain: float = -2.0104
+    lqr_theta_gain: float = -29.1450
+    lqr_theta_dot_gain: float = -6.5238
+    control_trigger_theta_rad: float = 0.0
+    control_trigger_theta_dot_rad_s: float = 0.0
+    control_trigger_samples: int = 0
+    max_acceleration_m_s2: float = 4.0
+    max_speed_mm_s: float = 500.0
 
 
 CONTROL_FIELDS = [
@@ -98,9 +117,9 @@ CONTROL_FIELDS = [
 ]
 
 
-def default_output_path() -> Path:
+def default_output_path(prefix: str = "downward_control", subdir: str = "downward") -> Path:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return Path("hardware") / "control experiments" / f"downward_control_{timestamp}.csv"
+    return Path("hardware") / "control experiments" / subdir / f"{prefix}_{timestamp}.csv"
 
 
 def run_downward_control(
@@ -109,19 +128,24 @@ def run_downward_control(
     encoder: EncoderReader,
     motion: MotionController,
     motion_config: MotionConfig,
-    control_config: DownwardControlConfig,
+    control_config: PendulumControlConfig,
     output_path: Path | None = None,
+    output_prefix: str = "downward_control",
+    output_subdir: str = "downward",
+    experiment_name: str = "Downward pendulum control experiment",
+    start_instruction: str = "Start with the cart near center and the pendulum hanging downward and motionless.",
+    start_prompt: str = "Let the pendulum hang downward and motionless, then press Enter to zero the encoder and arm automatic control...",
 ) -> Path:
-    output_path = output_path or default_output_path()
+    output_path = output_path or default_output_path(output_prefix, output_subdir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     stop_event = Event()
     stop_reason = "operator_stop"
     rows: list[dict[str, object]] = []
 
-    print("Downward pendulum control experiment")
+    print(experiment_name)
     print(f"Output file: {output_path}")
-    print("Start with the cart near center and the pendulum hanging downward and motionless.")
+    print(start_instruction)
     print(f"Control period: {control_config.period_s:.3f} s")
     print(f"Speed clamp: +/-{control_config.max_speed_mm_s:.3f} mm/s")
     print(f"Acceleration clamp: +/-{control_config.max_acceleration_m_s2:.3f} m/s^2")
@@ -130,7 +154,7 @@ def run_downward_control(
         print(f"Setup: home left at {control_config.home_speed_mm_s:g} mm/s")
     if control_config.move_middle_before_start:
         print(f"Setup: move to midpoint at {control_config.middle_speed_mm_s:g} mm/s")
-    print("Controller: full-state downward LQR acceleration command integrated to actuator speed")
+    print("Controller: full-state LQR acceleration command integrated to actuator speed")
     print("u_m_s2 = actuator_sign * -K[x, x_dot, theta, theta_dot], with filtering, deadbands, and speed clamps")
     print(
         "Gains: "
@@ -187,7 +211,7 @@ def run_downward_control(
         print("Moving to middle...")
         motion.move_to_middle(speed_mm_s=control_config.middle_speed_mm_s)
 
-    input("Let the pendulum hang downward and motionless, then press Enter to zero the encoder and arm automatic control...")
+    input(start_prompt)
 
     if control_config.zero_encoder_on_start:
         encoder.zero_current_position()
@@ -440,12 +464,37 @@ def run_downward_control(
     return output_path
 
 
+def run_upright_control(
+    actuator: ActuatorController,
+    limits: LimitSensorReader,
+    encoder: EncoderReader,
+    motion: MotionController,
+    motion_config: MotionConfig,
+    control_config: UprightControlConfig,
+    output_path: Path | None = None,
+) -> Path:
+    return run_downward_control(
+        actuator,
+        limits,
+        encoder,
+        motion,
+        motion_config,
+        control_config=control_config,
+        output_path=output_path,
+        output_prefix="upright_control",
+        output_subdir="upright",
+        experiment_name="Upright pendulum control experiment",
+        start_instruction="Start with the cart near center and the pendulum held upright.",
+        start_prompt="Hold the pendulum upright and as motionless as you can, then press Enter to zero the encoder and arm automatic control...",
+    )
+
+
 def compute_lqr_acceleration(
     x_m: float,
     x_dot_m_s: float,
     theta_rad: float,
     theta_dot_rad_s: float,
-    config: DownwardControlConfig,
+    config: PendulumControlConfig,
 ) -> float:
     model_acceleration_m_s2 = -(
         config.lqr_x_gain * x_m
@@ -482,7 +531,7 @@ def update_trigger_sample_count(
     trigger_sample_count: int,
     theta_rad: float,
     theta_dot_rad_s: float,
-    config: DownwardControlConfig,
+    config: PendulumControlConfig,
 ) -> int:
     triggered = (
         abs(theta_rad) >= config.control_trigger_theta_rad
@@ -497,7 +546,7 @@ def update_settle_sample_count(
     settle_sample_count: int,
     theta_rad: float,
     theta_dot_rad_s: float,
-    config: DownwardControlConfig,
+    config: PendulumControlConfig,
 ) -> int:
     settled = (
         abs(theta_rad) <= config.settle_theta_rad
@@ -508,7 +557,7 @@ def update_settle_sample_count(
     return 0
 
 
-def effective_acceleration_deadband(config: DownwardControlConfig) -> float:
+def effective_acceleration_deadband(config: PendulumControlConfig) -> float:
     if config.max_acceleration_m_s2 <= 0.0:
         return 0.0
     return min(config.acceleration_deadband_m_s2, 0.5 * config.max_acceleration_m_s2)
@@ -557,7 +606,7 @@ def build_log_row(
     trigger_sample_count: int,
     settle_sample_count: int,
     motion_config: MotionConfig,
-    control_config: DownwardControlConfig,
+    control_config: PendulumControlConfig,
     stop_reason: str,
 ) -> dict[str, object]:
     actuator_data = actuator_snapshot.data if actuator_snapshot is not None else {}

@@ -2,3 +2,7 @@
 debug.log
 __pycache__/
 *.pyc
+hardware/control experiments/downward/*.csv
+hardware/control experiments/downward/*_samples.csv
+hardware/control experiments/upright/*.csv
+hardware/control experiments/upright/*_samples.csv

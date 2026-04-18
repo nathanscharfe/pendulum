@@ -178,6 +178,12 @@ Run a first-pass downward pendulum damping experiment:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down
 ```
 
+Run a first-pass upright pendulum balancing experiment:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
+```
+
 The command first homes left, then moves to the configured midpoint. Once the actuator is centered, let the pendulum hang downward and motionless, then press Enter to zero the encoder and start a conservative LQR-style damping loop. Press Enter again to stop the controller and write the log. `Ctrl+C`, active limit sensors, or exceeding the angle cutoff also stop the actuator and save the data.
 
 The command uses the downward-equilibrium LQR gain from `lqr_downward_first_pass.m`:
@@ -185,6 +191,19 @@ The command uses the downward-equilibrium LQR gain from `lqr_downward_first_pass
 ```text
 K = [0.3162, 0.8139, -0.3088, -0.3479]
 ```
+
+The upright command uses the upright-equilibrium first-pass LQR gain from `lqr_first_pass.m`:
+
+```text
+K = [-1.0, -2.0104, -29.1450, -6.5238]
+```
+
+Because the upright first-pass LQR wants substantially more authority than the downward case, the upright command defaults to a larger acceleration and speed clamp:
+
+- Control period: `0.01 s`
+- Speed clamp: `+/-500 mm/s`
+- Acceleration clamp: `+/-4.0 m/s^2`
+- Control trigger: immediate arm after Enter and encoder zeroing
 
 It estimates the full state `[x, x_dot, theta, theta_dot]`, computes `u = -KX`, and integrates that acceleration command into the actuator step-rate interface. The command includes filtering, theta slew-rate limiting, and deadbands so a motionless pendulum does not make the actuator chatter.
 
@@ -227,7 +246,7 @@ To skip the setup moves for a repeat test:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --no-home --no-middle
 ```
 
-Each run writes a timestamped control CSV under `hardware/control experiments/`, plus sidecar raw sample logs for encoder, actuator, and limit-sensor serial data.
+Each run writes a timestamped control CSV under `hardware/control experiments/downward/` or `hardware/control experiments/upright/`, plus sidecar raw sample logs for encoder, actuator, and limit-sensor serial data. Analysis notebooks live under `hardware/control experiments/analysis/`.
 
 The hardware and model sign conventions are adjustable independently:
 
