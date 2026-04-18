@@ -152,7 +152,7 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--settle-samples", type=int, default=25, help="Consecutive settled samples required before disarming control.")
     control_up.add_argument("--velocity-leak-per-s", type=float, default=0.0)
     control_up.add_argument("--max-accel-m-s2", type=float, default=4.0)
-    control_up.add_argument("--max-speed-mm-s", type=float, default=500.0)
+    control_up.add_argument("--max-speed-mm-s", type=float, default=315.0)
     control_up.add_argument("--max-angle-rad", type=float, default=0.35)
     control_up.add_argument(
         "--invert-control",

@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
 from time import monotonic, sleep
+from typing import Callable
 
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
@@ -67,11 +68,13 @@ class UprightControlConfig(PendulumControlConfig):
     lqr_x_dot_gain: float = -2.0104
     lqr_theta_gain: float = -29.1450
     lqr_theta_dot_gain: float = -6.5238
+    armed_theta_alpha: float = 0.40
+    armed_theta_beta: float = 0.06
     control_trigger_theta_rad: float = 0.0
     control_trigger_theta_dot_rad_s: float = 0.0
     control_trigger_samples: int = 0
     max_acceleration_m_s2: float = 4.0
-    max_speed_mm_s: float = 500.0
+    max_speed_mm_s: float = 315.0
 
 
 CONTROL_FIELDS = [
@@ -135,6 +138,8 @@ def run_downward_control(
     experiment_name: str = "Downward pendulum control experiment",
     start_instruction: str = "Start with the cart near center and the pendulum hanging downward and motionless.",
     start_prompt: str = "Let the pendulum hang downward and motionless, then press Enter to zero the encoder and arm automatic control...",
+    pre_setup_sequence: Callable[[LimitSensorReader], None] | None = None,
+    startup_sequence: Callable[[LimitSensorReader, EncoderReader, PendulumControlConfig], None] | None = None,
 ) -> Path:
     output_path = output_path or default_output_path(output_prefix, output_subdir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -203,6 +208,9 @@ def run_downward_control(
     )
     print(f"Theta slew-rate limit: {control_config.max_theta_rate_rad_s:g} rad/s")
 
+    if pre_setup_sequence is not None:
+        pre_setup_sequence(limits)
+
     if control_config.home_before_start:
         print("Homing left...")
         motion.home(side="left", speed_mm_s=control_config.home_speed_mm_s)
@@ -211,11 +219,14 @@ def run_downward_control(
         print("Moving to middle...")
         motion.move_to_middle(speed_mm_s=control_config.middle_speed_mm_s)
 
-    input(start_prompt)
+    if startup_sequence is None:
+        input(start_prompt)
 
-    if control_config.zero_encoder_on_start:
-        encoder.zero_current_position()
-        sleep(0.2)
+        if control_config.zero_encoder_on_start:
+            encoder.zero_current_position()
+            sleep(0.2)
+    else:
+        startup_sequence(limits, encoder, control_config)
 
     actuator.clear_snapshots()
     limits.clear_snapshots()
@@ -485,7 +496,9 @@ def run_upright_control(
         output_subdir="upright",
         experiment_name="Upright pendulum control experiment",
         start_instruction="Start with the cart near center and the pendulum held upright.",
-        start_prompt="Hold the pendulum upright and as motionless as you can, then press Enter to zero the encoder and arm automatic control...",
+        start_prompt="",
+        pre_setup_sequence=release_upright_servo_for_setup,
+        startup_sequence=upright_servo_startup_sequence,
     )
 
 
@@ -561,6 +574,82 @@ def effective_acceleration_deadband(config: PendulumControlConfig) -> float:
     if config.max_acceleration_m_s2 <= 0.0:
         return 0.0
     return min(config.acceleration_deadband_m_s2, 0.5 * config.max_acceleration_m_s2)
+
+
+def upright_servo_startup_sequence(
+    limits: LimitSensorReader,
+    encoder: EncoderReader,
+    control_config: PendulumControlConfig,
+) -> None:
+    print("Upright staging loop:")
+    print("  p     move servo to HOLD (80 deg)")
+    print("  g     move servo to RELEASE (0 deg)")
+    print("  start zero encoder, release servo, and begin automatic control")
+
+    while True:
+        command = input("staging> ").strip().lower()
+        if command == "p":
+            print("Servo: hold latch.")
+            limits.hold_servo()
+            sleep(0.2)
+            continue
+        if command == "g":
+            print("Servo: release latch.")
+            limits.release_servo()
+            sleep(0.2)
+            report_release_fall_time(encoder, threshold_deg=10.0, timeout_s=5.0)
+            continue
+        if command == "start":
+            break
+        if not command:
+            print("Type 'p', 'g', or 'start'.")
+            continue
+        print("Unknown staging command. Type 'p', 'g', or 'start'.")
+
+    if control_config.zero_encoder_on_start:
+        encoder.zero_current_position()
+        sleep(0.1)
+
+    print("Servo: release latch and start control.")
+    limits.release_servo()
+    sleep(0.05)
+
+
+def release_upright_servo_for_setup(limits: LimitSensorReader) -> None:
+    print("Servo: release latch for setup moves.")
+    limits.release_servo()
+    sleep(0.2)
+
+
+def report_release_fall_time(
+    encoder: EncoderReader,
+    threshold_deg: float,
+    timeout_s: float,
+) -> None:
+    release_snapshot = encoder.get_latest()
+    if release_snapshot is None:
+        print("Release timing: no encoder data available.")
+        return
+
+    release_theta_rad = float(release_snapshot.data["theta_rad"])
+    threshold_rad = threshold_deg * 3.141592653589793 / 180.0
+    start_s = monotonic()
+
+    while True:
+        current_snapshot = encoder.get_latest()
+        if current_snapshot is not None:
+            current_theta_rad = float(current_snapshot.data["theta_rad"])
+            if abs(current_theta_rad - release_theta_rad) >= threshold_rad:
+                elapsed_s = monotonic() - start_s
+                print(f"Release timing: crossed +/-{threshold_deg:g} deg after {elapsed_s:.3f} s")
+                return
+
+        elapsed_s = monotonic() - start_s
+        if elapsed_s >= timeout_s:
+            print(f"Release timing: did not cross +/-{threshold_deg:g} deg within {timeout_s:.1f} s")
+            return
+
+        sleep(0.005)
 
 
 def start_enter_stop_thread(stop_event: Event) -> None:

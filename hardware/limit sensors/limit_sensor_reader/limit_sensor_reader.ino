@@ -1,8 +1,12 @@
+#include <Servo.h>
+
 // Linear actuator optical limit sensor reader.
 //
 // Serial commands:
 //   h  print the CSV header
 //   s  print current sensor state immediately
+//   g  release servo to 0 deg
+//   p  hold servo at 80 deg
 //
 // Wiring for the first sensor:
 //   brown  -> Arduino 5V
@@ -23,6 +27,10 @@ const unsigned long DEBOUNCE_MS = 5;
 // Black signal wires.
 const byte LEFT_LIMIT_PIN = 2;
 const byte RIGHT_LIMIT_PIN = 3;
+const byte SERVO_PIN = 7;
+
+const int SERVO_RELEASE_ANGLE_DEG = 0;
+const int SERVO_HOLD_ANGLE_DEG = 80;
 
 // White signal wires. These are disabled for initial testing.
 const byte LEFT_LIMIT_COMPLEMENT_PIN = 255;
@@ -51,6 +59,14 @@ DebouncedInput leftComplement = {LEFT_LIMIT_COMPLEMENT_PIN, false, false, false,
 DebouncedInput rightComplement = {RIGHT_LIMIT_COMPLEMENT_PIN, false, false, false, 0};
 
 unsigned long lastStatusMs = 0;
+Servo latchServo;
+int servoAngleDeg = SERVO_RELEASE_ANGLE_DEG;
+
+void setServoAngle(int angleDeg)
+{
+  servoAngleDeg = angleDeg;
+  latchServo.write(angleDeg);
+}
 
 bool pinIsUsed(byte pin)
 {
@@ -117,7 +133,7 @@ bool isComplementConsistent(const DebouncedInput &mainInput, const DebouncedInpu
 
 void printHeader()
 {
-  Serial.println("time_ms,left_limit,right_limit,left_complement,right_complement,left_pair_ok,right_pair_ok,any_limit");
+  Serial.println("time_ms,left_limit,right_limit,left_complement,right_complement,left_pair_ok,right_pair_ok,any_limit,servo_angle_deg");
 }
 
 void printState()
@@ -140,7 +156,9 @@ void printState()
   Serial.print(",");
   Serial.print(rightPairOk);
   Serial.print(",");
-  Serial.println(anyLimit);
+  Serial.print(anyLimit);
+  Serial.print(",");
+  Serial.println(servoAngleDeg);
 }
 
 void printEvent(const char *name, bool active)
@@ -167,6 +185,16 @@ void handleSerialCommands()
     {
       printState();
     }
+    else if (command == 'g' || command == 'G')
+    {
+      setServoAngle(SERVO_RELEASE_ANGLE_DEG);
+      Serial.println("# servo_released");
+    }
+    else if (command == 'p' || command == 'P')
+    {
+      setServoAngle(SERVO_HOLD_ANGLE_DEG);
+      Serial.println("# servo_hold");
+    }
   }
 }
 
@@ -178,9 +206,11 @@ void setup()
   beginInput(rightLimit);
   beginInput(leftComplement);
   beginInput(rightComplement);
+  latchServo.attach(SERVO_PIN);
+  setServoAngle(SERVO_RELEASE_ANGLE_DEG);
 
   Serial.println("# limit_sensor_reader");
-  Serial.println("# Send 'h' to print the CSV header or 's' to print the current state.");
+  Serial.println("# Send 'h' to print the CSV header, 's' to print the current state, 'g' to release the servo, or 'p' to hold the servo.");
   printHeader();
 }
 

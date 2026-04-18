@@ -184,7 +184,15 @@ Run a first-pass upright pendulum balancing experiment:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
 ```
 
-The command first homes left, then moves to the configured midpoint. Once the actuator is centered, let the pendulum hang downward and motionless, then press Enter to zero the encoder and start a conservative LQR-style damping loop. Press Enter again to stop the controller and write the log. `Ctrl+C`, active limit sensors, or exceeding the angle cutoff also stop the actuator and save the data.
+The downward command first homes left, then moves to the configured midpoint. Once the actuator is centered, let the pendulum hang downward and motionless, then press Enter to zero the encoder and start the damping loop. Press Enter again to stop the controller and write the log.
+
+The upright command now uses a staging loop after the setup moves. Arduino #2 can drive a simple latch servo on `D7`, with:
+
+- `p`: hold the pendulum with the servo at `80 deg`
+- `g`: release the servo to `0 deg`
+- `start`: zero the encoder, send `g`, and begin automatic control
+
+This makes it possible to line up the upright start condition without rerunning the homing and midpoint move every time. `Ctrl+C`, active limit sensors, or exceeding the angle cutoff still stop the actuator and save the data.
 
 The command uses the downward-equilibrium LQR gain from `lqr_downward_first_pass.m`:
 
@@ -201,9 +209,11 @@ K = [-1.0, -2.0104, -29.1450, -6.5238]
 Because the upright first-pass LQR wants substantially more authority than the downward case, the upright command defaults to a larger acceleration and speed clamp:
 
 - Control period: `0.01 s`
-- Speed clamp: `+/-500 mm/s`
+- Speed clamp: `+/-315 mm/s`
 - Acceleration clamp: `+/-4.0 m/s^2`
 - Control trigger: immediate arm after Enter and encoder zeroing
+
+The `315 mm/s` upright speed clamp is based on a measured bench limit: faster commanded speeds caused the present actuator setup to stall.
 
 It estimates the full state `[x, x_dot, theta, theta_dot]`, computes `u = -KX`, and integrates that acceleration command into the actuator step-rate interface. The command includes filtering, theta slew-rate limiting, and deadbands so a motionless pendulum does not make the actuator chatter.
 

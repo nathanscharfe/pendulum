@@ -230,3 +230,38 @@ Next:
 - Preserve this downward-control baseline in git before making larger changes.
 - Revisit low-amplitude residual oscillation and tail-phase overreaction with smaller, targeted adjustments.
 - Use the downward case as the host/control baseline before moving on to more ambitious inverted-pendulum work.
+
+## 2026-04-18
+
+Extended the upright-control workflow with documentation, analysis overlays, servo-assisted staging, and a measured actuator speed limit.
+
+Completed:
+
+- Added an upright analysis notebook and overlay plots against the current best run:
+  - `hardware/control experiments/analysis/analyze_upright_control.ipynb`
+- Updated top-level documentation to feature the upright demo video and current upright-control workflow:
+  - `README.md`
+  - `docs/media/upright_balance_run_2026-04-18.mp4`
+- Updated the host and firmware for Arduino #2 to support a simple latch servo:
+  - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
+  - `hardware/limit sensors/servo_angle_test/servo_angle_test.ino`
+  - `software/host/arduino_limits.py`
+- Updated `control-up` to use a staging loop after homing/middle:
+  - `p` to hold the pendulum with the servo
+  - `g` to release the servo
+  - `start` to zero the encoder, release the servo, and begin automatic control
+- Added a staging-loop diagnostic that reports time-to-fall past `10 deg` after each servo release.
+- Bench-tested the actuator speed ceiling and reduced the upright host default speed clamp to the measured no-stall limit of `315 mm/s`.
+- Hardened the serial reader so a malformed encoder line no longer kills the host-side reader thread.
+
+Notes:
+
+- The best upright run still remains the earlier manually staged run at about `6.75 s`; the servo-assisted workflow improved repeatability of the start condition but has not yet improved the best achieved balance duration.
+- Recent poor upright runs appear more consistent with startup/release transients or physical actuator limitations than with a sign error or a dramatic observer failure.
+- Current upright control remains most sensitive to initial condition, release repeatability, and real actuator authority.
+
+Next:
+
+- Compare servo-assisted starts directly against manual starts to separate release-transient effects from controller limitations.
+- Consider mechanical changes that slow the upright dynamics or reduce release disturbance, including pendulum length and latch geometry.
+- Use the new staging-loop `g` timing metric to quantify release repeatability before further controller changes.

@@ -23,14 +23,20 @@ python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-
 What to expect:
 
 1. The cart homes left and then moves to the middle.
-2. Hold the pendulum as straight upright as you can.
-3. Press `Enter` to zero the encoder and immediately arm the upright controller.
-4. Keep clear and be ready to stop the run if needed.
+2. A staging prompt appears so you can operate the latch servo on Arduino #2:
+   - `p` holds the pendulum with the servo at `80 deg`
+   - `g` releases the servo to `0 deg`
+   - `start` zeroes the encoder, sends `g`, and begins automatic control
+3. Use the staging loop until the pendulum is aligned the way you want.
+4. Type `start` to begin automatic control.
+5. Keep clear and be ready to stop the run if needed.
 
 Important notes:
 
-- The angle at the moment you press `Enter` becomes the controller's zero reference, so careful manual alignment matters.
+- The angle at the moment you type `start` becomes the controller's zero reference, so careful manual alignment still matters.
+- The current upright setup uses a latch servo on Arduino #2 (`D7`) so the pendulum can be staged before release.
 - The current best upright runs used no cart-centering term, so the plain `control-up` command above is the baseline test.
+- The measured no-stall actuator ceiling is about `315 mm/s`, and the current upright default speed clamp matches that measured limit.
 - Output logs are written under `hardware/control experiments/upright/`.
 - Analysis notebook: `hardware/control experiments/analysis/analyze_upright_control.ipynb`
 
@@ -66,6 +72,7 @@ Current hardware-related files:
 - `hardware/linear actuator calibration/calibrate_linear_actuator/calibrate_linear_actuator.ino`
 - `hardware/linear actuator control/linear_actuator_controller/linear_actuator_controller.ino`
 - `hardware/limit sensors/limit_sensor_reader/limit_sensor_reader.ino`
+- `hardware/limit sensors/servo_angle_test/servo_angle_test.ino`
 - `hardware/magnetic encoder/as5600_example/README.md`
 - `hardware/magnetic encoder/pendulum_angle_reader/pendulum_angle_reader.ino`
 - `hardware/cad/stl/arduino mount.stl`
@@ -183,7 +190,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-The project has moved well beyond initial setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The host-side raw-step travel calibration has been collected and gives a default scale of `10.652 steps/mm`. The Arduino sketch used for collecting the actuator speed calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and MATLAB LQR simulations have been run for both inverted and downward equilibria. The Python host software now supports homing, absolute moves, encoder capture, downward control experiments, upright control experiments, experiment logging, and analysis notebooks. On hardware, the system now demonstrates repeatable downward recovery and first-pass upright balancing for several seconds on successful runs.
+The project has moved well beyond initial setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The host-side raw-step travel calibration has been collected and gives a default scale of `10.652 steps/mm`. The Arduino sketch used for collecting the actuator speed calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup, and Arduino #2 now also supports a simple latch-servo interface for upright staging. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and MATLAB LQR simulations have been run for both inverted and downward equilibria. The Python host software now supports homing, absolute moves, encoder capture, downward control experiments, upright control experiments, experiment logging, analysis notebooks, and a servo-assisted upright staging loop. On hardware, the system now demonstrates repeatable downward recovery and first-pass upright balancing for several seconds on successful runs. Bench testing also established that the current actuator hardware can reliably reach about `315 mm/s` without stalling, and the upright host defaults now reflect that measured limit.
 
 Current bench setup photo:
 
