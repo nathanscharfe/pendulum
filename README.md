@@ -25,7 +25,7 @@ Planned setup:
 
 Current hardware-related files:
 
-- `docs/images/assembled_pendulum_bench_setup_2026-04-16.jpg`
+- `docs/images/assembled_pendulum_bench_setup_2026-04-17.jpg`
 - `hardware/linear actuator calibration/calibration_procedure.md`
 - `hardware/linear actuator calibration/linear actuator speed calibration.xlsx`
 - `hardware/linear actuator calibration/actuator_speed_fit.ipynb`
@@ -155,7 +155,7 @@ Early project setup. The linear actuator speed calibration data has been collect
 
 Current bench setup photo:
 
-- `docs/images/assembled_pendulum_bench_setup_2026-04-16.jpg`
+- `docs/images/assembled_pendulum_bench_setup_2026-04-17.jpg`
 
 Project notes are tracked in:
 
