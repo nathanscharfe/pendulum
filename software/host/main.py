@@ -8,6 +8,7 @@ from pathlib import Path
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
+from .downward_control import DownwardControlConfig, run_downward_control
 from .encoder_capture import run_encoder_capture
 from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
@@ -64,6 +65,63 @@ def build_parser() -> argparse.ArgumentParser:
     capture_encoder = subparsers.add_parser("capture-encoder", help="Record pendulum encoder data until Enter is pressed.")
     capture_encoder.add_argument("--output", type=Path, help="CSV output path.")
     capture_encoder.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
+
+    control_down = subparsers.add_parser("control-down", help="Run a first-pass downward pendulum damping controller and log data.")
+    control_down.add_argument("--output", type=Path, help="CSV output path.")
+    control_down.add_argument("--period-s", type=float, default=0.05)
+    control_down.add_argument("--x-gain", type=float, default=0.3162, help="Downward LQR cart-position gain.")
+    control_down.add_argument("--x-dot-gain", type=float, default=0.8139, help="Downward LQR cart-velocity gain.")
+    control_down.add_argument("--theta-gain", type=float, default=-0.3088, help="Downward LQR theta gain.")
+    control_down.add_argument("--omega-gain", type=float, default=-0.3479, help="Downward LQR theta-dot gain.")
+    control_down.add_argument("--center-gain", type=float, default=0.0, help="Cart centering gain in 1/s.")
+    control_down.add_argument("--estimator", choices=["alpha-beta", "legacy"], default="alpha-beta")
+    control_down.add_argument("--theta-alpha", type=float, default=0.45, help="Alpha-beta estimator angle correction gain.")
+    control_down.add_argument("--theta-beta", type=float, default=0.08, help="Alpha-beta estimator angular-rate correction gain.")
+    control_down.add_argument("--max-theta-residual-rad", type=float, default=0.02, help="Clamp alpha-beta angle innovation to reject encoder jumps.")
+    control_down.add_argument("--armed-theta-alpha", type=float, default=0.55, help="Alpha-beta angle gain after control is armed.")
+    control_down.add_argument("--armed-theta-beta", type=float, default=0.12, help="Alpha-beta angular-rate gain after control is armed.")
+    control_down.add_argument("--armed-max-theta-residual-rad", type=float, default=0.05, help="Alpha-beta innovation clamp after control is armed.")
+    control_down.add_argument("--theta-filter-alpha", type=float, default=0.25)
+    control_down.add_argument("--theta-dot-filter-alpha", type=float, default=0.20)
+    control_down.add_argument("--max-theta-rate-rad-s", type=float, default=3.0)
+    control_down.add_argument("--theta-deadband-rad", type=float, default=0.003)
+    control_down.add_argument("--omega-deadband-rad-s", type=float, default=0.10, help="Theta-dot deadband in rad/s.")
+    control_down.add_argument("--accel-deadband-m-s2", type=float, default=0.005)
+    control_down.add_argument("--control-trigger-theta-rad", type=float, default=0.045, help="Hold actuator still until estimated theta exceeds this magnitude.")
+    control_down.add_argument("--control-trigger-omega-rad-s", type=float, default=0.30, help="Hold actuator still until estimated theta-dot exceeds this magnitude.")
+    control_down.add_argument("--control-trigger-samples", type=int, default=2, help="Consecutive trigger samples required before actuator commands are allowed.")
+    control_down.add_argument("--settle-theta-rad", type=float, default=0.025, help="Disarm control after estimated theta stays below this magnitude.")
+    control_down.add_argument("--settle-omega-rad-s", type=float, default=0.12, help="Disarm control after estimated theta-dot stays below this magnitude.")
+    control_down.add_argument("--settle-samples", type=int, default=25, help="Consecutive settled samples required before disarming control.")
+    control_down.add_argument("--velocity-leak-per-s", type=float, default=0.0)
+    control_down.add_argument("--max-accel-m-s2", type=float, default=0.5)
+    control_down.add_argument("--max-speed-mm-s", type=float, default=150.0)
+    control_down.add_argument("--max-angle-rad", type=float, default=0.35)
+    control_down.add_argument(
+        "--invert-control",
+        action="store_true",
+        help="Compatibility alias for --invert-actuator-command.",
+    )
+    control_down.add_argument(
+        "--invert-actuator-command",
+        action="store_true",
+        help="Flip the sign between the LQR acceleration command and actuator motion.",
+    )
+    control_down.add_argument(
+        "--invert-cart-position",
+        action="store_true",
+        help="Flip the sign of cart position and cart velocity before applying the LQR gain.",
+    )
+    control_down.add_argument(
+        "--invert-encoder-angle",
+        action="store_true",
+        help="Flip the sign of theta and theta-dot before applying the LQR gain.",
+    )
+    control_down.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing before arming.")
+    control_down.add_argument("--home-speed-mm-s", type=float, default=50.0)
+    control_down.add_argument("--middle-speed-mm-s", type=float, default=50.0)
+    control_down.add_argument("--no-home", action="store_true", help="Skip homing left before arming control.")
+    control_down.add_argument("--no-middle", action="store_true", help="Skip moving to the configured midpoint before arming control.")
 
     subparsers.add_parser("shell", help="Start an interactive motion shell without reopening serial ports between commands.")
 
@@ -245,6 +303,60 @@ def main() -> int:
                     print("--encoder-port is required for capture-encoder")
                     return 2
                 run_encoder_capture(encoder, output_path=args.output, zero_on_start=not args.no_zero_on_start)
+                return 0
+
+            if command == "control-down":
+                if actuator is None or limits is None or encoder is None:
+                    print("--actuator-port, --limits-port, and --encoder-port are required for control-down")
+                    return 2
+                control_config = DownwardControlConfig(
+                    period_s=args.period_s,
+                    lqr_x_gain=args.x_gain,
+                    lqr_x_dot_gain=args.x_dot_gain,
+                    lqr_theta_gain=args.theta_gain,
+                    lqr_theta_dot_gain=args.omega_gain,
+                    center_gain_per_s=args.center_gain,
+                    estimator=args.estimator,
+                    theta_alpha=args.theta_alpha,
+                    theta_beta=args.theta_beta,
+                    max_theta_residual_rad=args.max_theta_residual_rad,
+                    armed_theta_alpha=args.armed_theta_alpha,
+                    armed_theta_beta=args.armed_theta_beta,
+                    armed_max_theta_residual_rad=args.armed_max_theta_residual_rad,
+                    theta_filter_alpha=args.theta_filter_alpha,
+                    theta_dot_filter_alpha=args.theta_dot_filter_alpha,
+                    max_theta_rate_rad_s=args.max_theta_rate_rad_s,
+                    theta_deadband_rad=args.theta_deadband_rad,
+                    theta_dot_deadband_rad_s=args.omega_deadband_rad_s,
+                    acceleration_deadband_m_s2=args.accel_deadband_m_s2,
+                    control_trigger_theta_rad=args.control_trigger_theta_rad,
+                    control_trigger_theta_dot_rad_s=args.control_trigger_omega_rad_s,
+                    control_trigger_samples=args.control_trigger_samples,
+                    settle_theta_rad=args.settle_theta_rad,
+                    settle_theta_dot_rad_s=args.settle_omega_rad_s,
+                    settle_samples=args.settle_samples,
+                    velocity_leak_per_s=args.velocity_leak_per_s,
+                    max_acceleration_m_s2=args.max_accel_m_s2,
+                    max_speed_mm_s=args.max_speed_mm_s,
+                    max_abs_theta_rad=args.max_angle_rad,
+                    actuator_command_sign=-1.0 if args.invert_control or args.invert_actuator_command else 1.0,
+                    cart_position_sign=-1.0 if args.invert_cart_position else 1.0,
+                    encoder_angle_sign=-1.0 if args.invert_encoder_angle else 1.0,
+                    zero_encoder_on_start=not args.no_zero_on_start,
+                    home_before_start=not args.no_home,
+                    move_middle_before_start=not args.no_middle,
+                    home_speed_mm_s=args.home_speed_mm_s,
+                    middle_speed_mm_s=args.middle_speed_mm_s,
+                )
+                run_downward_control(
+                    actuator,
+                    limits,
+                    encoder,
+                    motion,
+                    motion_config=motion_config,
+                    control_config=control_config,
+                    output_path=args.output,
+                )
                 return 0
 
             if motion is None:

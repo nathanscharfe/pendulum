@@ -14,6 +14,11 @@ Completed:
   - `hardware/magnetic encoder/captures/encoder_capture_20260418_113008.csv`
   - `hardware/magnetic encoder/captures/encoder_capture_20260418_113607.csv`
   - `hardware/magnetic encoder/captures/encoder_capture_results.md`
+- Added and ran a downward-equilibrium LQR simulation for early bench damping tests:
+  - `modeling/pendulum_actuator_derivation/lqr_downward_first_pass.m`
+  - `modeling/pendulum_actuator_derivation/lqr_downward_first_pass_results.md`
+  - `modeling/pendulum_actuator_derivation/LQR_downward_closed_loop_response.fig`
+  - `modeling/pendulum_actuator_derivation/LQR_downward_closed_loop_response.png`
 
 Notes:
 
@@ -21,6 +26,7 @@ Notes:
 - Larger manual angle checks showed asymmetric response. A roughly `45 deg` side-to-side test reported about `-47 deg` on one side and about `+89 deg` on the other.
 - A likely mechanical cause is that the magnet is currently sitting on the pendulum axle bolt head and may not be flat or centered relative to the AS5600.
 - The AS5600 magnetic diagnostics still reported weak-field behavior even while angle data was smooth enough for qualitative testing.
+- The downward LQR gain was `K = [0.3162, 0.8139, -0.3088, -0.3479]`, with peak simulated commanded acceleration `0.112 m/s^2` and peak cart displacement `0.027 m`.
 
 Next:
 

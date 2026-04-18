@@ -29,5 +29,7 @@ Current parameter notes:
 
 Current simulation notes:
 
-- `lqr_first_pass.m`
+- `lqr_first_pass.m` - upright-equilibrium LQR first pass
+- `lqr_downward_first_pass.m` - downward-equilibrium LQR first pass for early bench damping tests
 - `lqr_first_pass_results.md`
+- `lqr_downward_first_pass_results.md`

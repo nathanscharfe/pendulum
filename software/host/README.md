@@ -172,6 +172,84 @@ To keep the existing encoder zero instead:
 python -m software.host.main --encoder-port COM8 capture-encoder --no-zero-on-start
 ```
 
+Run a first-pass downward pendulum damping experiment:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down
+```
+
+The command first homes left, then moves to the configured midpoint. Once the actuator is centered, let the pendulum hang downward and motionless, then press Enter to zero the encoder and start a conservative LQR-style damping loop. Press Enter again to stop the controller and write the log. `Ctrl+C`, active limit sensors, or exceeding the angle cutoff also stop the actuator and save the data.
+
+The command uses the downward-equilibrium LQR gain from `lqr_downward_first_pass.m`:
+
+```text
+K = [0.3162, 0.8139, -0.3088, -0.3479]
+```
+
+It estimates the full state `[x, x_dot, theta, theta_dot]`, computes `u = -KX`, and integrates that acceleration command into the actuator step-rate interface. The command includes filtering, theta slew-rate limiting, and deadbands so a motionless pendulum does not make the actuator chatter.
+
+Default controller behavior:
+
+- Control period: `0.05 s`
+- Speed clamp: `+/-150 mm/s`
+- Acceleration clamp: `+/-0.5 m/s^2`
+- Angle cutoff: `+/-0.35 rad`
+- LQR cart-position gain: `0.3162`
+- LQR cart-velocity gain: `0.8139`
+- LQR theta gain: `-0.3088`
+- LQR theta-dot gain: `-0.3479`
+- Estimator: `alpha-beta`
+- Alpha-beta angle gain: `0.45`
+- Alpha-beta angular-rate gain: `0.08`
+- Alpha-beta residual clamp: `0.02 rad`
+- Armed alpha-beta angle gain: `0.55`
+- Armed alpha-beta angular-rate gain: `0.12`
+- Armed alpha-beta residual clamp: `0.05 rad`
+- Theta deadband: `0.003 rad`
+- Theta-dot deadband: `0.10 rad/s`
+- Control trigger: `|theta| > 0.045 rad` or `|theta_dot| > 0.30 rad/s` for `2` consecutive samples
+- Settle disarm: `|theta| < 0.025 rad` and `|theta_dot| < 0.12 rad/s` for `25` consecutive samples
+- Theta slew-rate limit: `3.0 rad/s`
+- Acceleration deadband: `0.005 m/s^2`
+- Velocity leak: `0 1/s`
+- Centering gain: `0 1/s`
+
+If `--max-accel-m-s2` is set below the default acceleration deadband, the program automatically lowers the effective acceleration deadband to half of the acceleration clamp so commands are not silently zeroed.
+
+Setup defaults:
+
+- Home left speed: `50 mm/s`
+- Move-to-middle speed: `50 mm/s`
+
+To skip the setup moves for a repeat test:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --no-home --no-middle
+```
+
+Each run writes a timestamped control CSV under `hardware/control experiments/`, plus sidecar raw sample logs for encoder, actuator, and limit-sensor serial data.
+
+The hardware and model sign conventions are adjustable independently:
+
+- `--invert-actuator-command`: flips the sign between the LQR acceleration command and physical actuator motion.
+- `--invert-cart-position`: flips the sign of cart position and cart velocity before applying the LQR gain.
+- `--invert-encoder-angle`: flips the sign of theta and theta-dot before applying the LQR gain.
+- `--invert-control`: compatibility alias for `--invert-actuator-command`.
+
+If a small perturbation gets worse instead of damping out, stop immediately and try the most likely sign change first. The latest bench runs suggest testing the actuator command and cart-position signs together:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --invert-actuator-command --invert-cart-position
+```
+
+If the motion is too aggressive for a cautious retest, override the clamps with `--max-speed-mm-s` and `--max-accel-m-s2`.
+
+The default `alpha-beta` estimator is intended to reject the several-degree encoder jumps seen when the pendulum is motionless while still estimating theta-dot with less lag than differentiating a heavily filtered angle. The controller also holds the actuator still until the estimated angle or angular rate exceeds a trigger threshold for several consecutive samples. After a perturbation damps back near zero, it disarms and zeros the speed command so the cart stops chasing encoder jitter. To fall back to the original filter path, use `--estimator legacy`. A more responsive test without making the controller react to every encoder count jump is:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --invert-actuator-command --invert-cart-position --period-s 0.02 --theta-alpha 0.35 --theta-beta 0.04 --max-theta-residual-rad 0.01 --armed-theta-alpha 0.55 --armed-theta-beta 0.12 --armed-max-theta-residual-rad 0.05 --omega-deadband-rad-s 0.10 --theta-deadband-rad 0.003 --accel-deadband-m-s2 0.005 --control-trigger-theta-rad 0.045 --control-trigger-omega-rad-s 0.30 --control-trigger-samples 2 --settle-theta-rad 0.025 --settle-omega-rad-s 0.12 --settle-samples 25
+```
+
 Initial live motion smoke test:
 
 - Date: 2026-04-17
