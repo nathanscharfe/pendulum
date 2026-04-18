@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from threading import Event, Lock, Thread
 from time import time
@@ -16,7 +17,7 @@ class SerialSnapshot:
 class SerialWorker:
     """Background serial reader that owns one Arduino serial port."""
 
-    def __init__(self, port: str, baudrate: int = 115200, timeout_s: float = 1.0) -> None:
+    def __init__(self, port: str, baudrate: int = 115200, timeout_s: float = 1.0, history_limit: int = 200000) -> None:
         self.port = port
         self.baudrate = baudrate
         self.timeout_s = timeout_s
@@ -31,6 +32,7 @@ class SerialWorker:
         self._last_error: str | None = None
         self._last_comment: str | None = None
         self._last_ack: str | None = None
+        self._history: deque[SerialSnapshot] = deque(maxlen=history_limit)
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -55,6 +57,16 @@ class SerialWorker:
     def get_latest(self) -> SerialSnapshot | None:
         with self._lock:
             return self._latest
+
+    def clear_snapshots(self) -> None:
+        with self._lock:
+            self._history.clear()
+
+    def drain_snapshots(self) -> list[SerialSnapshot]:
+        with self._lock:
+            snapshots = list(self._history)
+            self._history.clear()
+            return snapshots
 
     def get_last_error(self) -> str | None:
         with self._lock:
@@ -121,6 +133,7 @@ class SerialWorker:
             snapshot = SerialSnapshot(timestamp_s=time(), raw_line=line, data=parsed)
             with self._lock:
                 self._latest = snapshot
+                self._history.append(snapshot)
             return
 
         if line.startswith("#"):

@@ -41,6 +41,8 @@ magnet_too_strong = 0
 
 During initial bring-up, the angle reading was smooth even though the magnetic field diagnostics reported `magnet_detected = 0` and `magnet_too_weak = 1`. For now, use the magnet fields as diagnostics rather than hard validity gates. Confirm that the angle is stable at rest, changes smoothly during rotation, wraps cleanly across `0/4095`, and returns to the same value at the same physical position.
 
+Follow-up host captures on 2026-04-18 confirmed stable near-zero behavior, but larger manual angle checks were asymmetric. A roughly `45 deg` side-to-side check reported about `-47 deg` on one side and about `+89 deg` on the other. The likely cause is mechanical alignment: the magnet is currently sitting on the head of the pendulum axle bolt and may not be flat or centered relative to the AS5600. Before relying on the encoder for closed-loop control over a wider range, design a more stable magnet/sensor alignment method and repeat the held-angle validation.
+
 ## Serial Commands
 
 - `z`: zero the current encoder position

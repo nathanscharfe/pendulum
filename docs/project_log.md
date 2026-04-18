@@ -1,5 +1,33 @@
 # Project Log
 
+## 2026-04-18
+
+Added host-side magnetic encoder capture tooling and collected initial bench data.
+
+Completed:
+
+- Added an interactive encoder capture command:
+  - `python -m software.host.main --encoder-port COM8 capture-encoder`
+  - `software/host/encoder_capture.py`
+- Collected AS5600 free-swing and manual held-angle captures:
+  - `hardware/magnetic encoder/captures/encoder_capture_20260418_112254.csv`
+  - `hardware/magnetic encoder/captures/encoder_capture_20260418_113008.csv`
+  - `hardware/magnetic encoder/captures/encoder_capture_20260418_113607.csv`
+  - `hardware/magnetic encoder/captures/encoder_capture_results.md`
+
+Notes:
+
+- The encoder capture workflow recorded about `100 Hz` data and showed good return-to-zero behavior near the downward resting position.
+- Larger manual angle checks showed asymmetric response. A roughly `45 deg` side-to-side test reported about `-47 deg` on one side and about `+89 deg` on the other.
+- A likely mechanical cause is that the magnet is currently sitting on the pendulum axle bolt head and may not be flat or centered relative to the AS5600.
+- The AS5600 magnetic diagnostics still reported weak-field behavior even while angle data was smooth enough for qualitative testing.
+
+Next:
+
+- Design a more dimensionally stable magnet/sensor alignment method for the AS5600.
+- Repeat encoder held-angle validation after improving magnet alignment.
+- Continue toward the fixed-rate hardware control loop and state-estimation software tasks.
+
 ## 2026-04-17
 
 Continued hardware bring-up for the sensing electronics.

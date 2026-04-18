@@ -8,6 +8,7 @@ from pathlib import Path
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
+from .encoder_capture import run_encoder_capture
 from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
 from .travel_calibration import DEFAULT_RELATIVE_STEPS, run_travel_calibration
@@ -59,6 +60,10 @@ def build_parser() -> argparse.ArgumentParser:
     speed = subparsers.add_parser("speed", help="Run a signed speed command with host-side limit protection.")
     speed.add_argument("speed_mm_s", type=float)
     speed.add_argument("--duration", type=float, required=True)
+
+    capture_encoder = subparsers.add_parser("capture-encoder", help="Record pendulum encoder data until Enter is pressed.")
+    capture_encoder.add_argument("--output", type=Path, help="CSV output path.")
+    capture_encoder.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
 
     subparsers.add_parser("shell", help="Start an interactive motion shell without reopening serial ports between commands.")
 
@@ -233,6 +238,13 @@ def main() -> int:
                     print("--actuator-port is required for stop")
                     return 2
                 actuator.stop_motion()
+                return 0
+
+            if command == "capture-encoder":
+                if encoder is None:
+                    print("--encoder-port is required for capture-encoder")
+                    return 2
+                run_encoder_capture(encoder, output_path=args.output, zero_on_start=not args.no_zero_on_start)
                 return 0
 
             if motion is None:

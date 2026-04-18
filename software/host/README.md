@@ -158,6 +158,20 @@ Run a signed speed command for a fixed duration:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 speed 20 --duration 2
 ```
 
+Capture a free-swing pendulum encoder experiment:
+
+```powershell
+python -m software.host.main --encoder-port COM8 capture-encoder
+```
+
+The capture command waits for you to press Enter, zeros the current downward resting angle, records encoder data while you manually displace and release the pendulum, then stops when you press Enter again. Each run writes a timestamped CSV under `hardware/magnetic encoder/captures/`.
+
+To keep the existing encoder zero instead:
+
+```powershell
+python -m software.host.main --encoder-port COM8 capture-encoder --no-zero-on-start
+```
+
 Initial live motion smoke test:
 
 - Date: 2026-04-17
