@@ -128,7 +128,12 @@ class SerialWorker:
                 self._last_error = line
             return
 
-        parsed = self.parse_line(line)
+        try:
+            parsed = self.parse_line(line)
+        except ValueError as exc:
+            with self._lock:
+                self._last_error = f"parse_error,{line},{exc}"
+            return
         if parsed is not None:
             snapshot = SerialSnapshot(timestamp_s=time(), raw_line=line, data=parsed)
             with self._lock:

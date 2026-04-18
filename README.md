@@ -1,6 +1,38 @@
 # Pendulum Optimal Control Demonstration
 
-This project is a starting point for an optimal control demonstration using a pendulum mounted to a linear actuator. The first control target is an LQR controller, with the long-term goal of stabilizing the pendulum in the inverted position if the hardware and sensing setup allow it.
+This project is a working optimal control demonstration for a pendulum mounted to a linear actuator. The repository now includes hardware, modeling, firmware, host-side control software, and experimental results for both downward stabilization and first-pass real-hardware upright balancing with an LQR-based controller.
+
+## Upright Balance Video
+
+<video src="docs/media/upright_balance_run_2026-04-18.mp4" controls muted playsinline></video>
+
+If your Markdown viewer does not render embedded video, open:
+
+- `docs/media/upright_balance_run_2026-04-18.mp4`
+
+This clip shows the current best upright run, where the pendulum balances for several seconds before eventually losing control.
+
+## Run The Upright Control Test
+
+From the repository root, run:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
+```
+
+What to expect:
+
+1. The cart homes left and then moves to the middle.
+2. Hold the pendulum as straight upright as you can.
+3. Press `Enter` to zero the encoder and immediately arm the upright controller.
+4. Keep clear and be ready to stop the run if needed.
+
+Important notes:
+
+- The angle at the moment you press `Enter` becomes the controller's zero reference, so careful manual alignment matters.
+- The current best upright runs used no cart-centering term, so the plain `control-up` command above is the baseline test.
+- Output logs are written under `hardware/control experiments/upright/`.
+- Analysis notebook: `hardware/control experiments/analysis/analyze_upright_control.ipynb`
 
 ## Project Goals
 
@@ -151,7 +183,7 @@ This repository is still being organized. A likely structure is:
 
 ## Current Status
 
-Early project setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The host-side raw-step travel calibration has been collected and gives a default scale of `10.652 steps/mm`. The Arduino sketch used for collecting the actuator speed calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and an initial MATLAB LQR simulation has been run using \(l = 0.510\ \text{m}\). An initial Python host software scaffold now provides serial interface classes for the actuator controller, limit sensor reader, and encoder reader, plus basic host-side actuator motion commands with limit-sensor checks and raw step moves for calibration.
+The project has moved well beyond initial setup. The linear actuator speed calibration data has been collected, and a Python notebook now fits the calibration data to produce a desired-speed-to-delay command equation. The host-side raw-step travel calibration has been collected and gives a default scale of `10.652 steps/mm`. The Arduino sketch used for collecting the actuator speed calibration data is stored with the calibration files. Initial 3D-printable STL exports for the printed hardware have been added under `hardware/cad/stl/`, and the pendulum has been assembled with the printed parts. Both optical actuator limit sensors have been tested with Arduino inputs, and the Arduino #1 actuator controller firmware has been tested. The limit sensor reader firmware and magnetic encoder reader firmware are complete for the current three-Arduino setup. The actuator limit sensor wire harness has been built, and the magnetic encoder Arduino mount has been created. A first-pass point-mass inverted pendulum model has been derived, and MATLAB LQR simulations have been run for both inverted and downward equilibria. The Python host software now supports homing, absolute moves, encoder capture, downward control experiments, upright control experiments, experiment logging, and analysis notebooks. On hardware, the system now demonstrates repeatable downward recovery and first-pass upright balancing for several seconds on successful runs.
 
 Current bench setup photo:
 
@@ -163,12 +195,9 @@ Project notes are tracked in:
 
 ## Next Steps
 
-- Document the physical setup and available sensors.
-- Decide what states will be measured or estimated.
+- Improve upright balance duration and reduce cart drift during inverted balancing runs.
+- Make upright start-up more repeatable, including angle-zeroing workflow and mechanical alignment.
+- Refine the encoder mounting and magnet alignment to reduce transient angle estimation errors.
+- Revisit the upright model and LQR tuning after any pendulum geometry changes.
+- Add better documentation for the experiment workflow, analysis notebooks, and best-known controller settings.
 - Add editable CAD source files if they are available.
-- Verify clearances, alignment, range of motion, and mechanical stiffness on the assembled pendulum.
-- Verify the encoder signal through the installed magnet/shaft geometry.
-- Refine physical parameter estimates for the pendulum and actuator.
-- Compare first-pass LQR acceleration commands against actuator limits.
-- Tune and validate the LQR controller in simulation.
-- Bench-test host-side homing and absolute-position moves.
