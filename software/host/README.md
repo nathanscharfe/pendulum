@@ -199,16 +199,16 @@ Default controller behavior:
 - LQR theta gain: `-0.3088`
 - LQR theta-dot gain: `-0.3479`
 - Estimator: `alpha-beta`
-- Alpha-beta angle gain: `0.45`
-- Alpha-beta angular-rate gain: `0.08`
-- Alpha-beta residual clamp: `0.02 rad`
-- Armed alpha-beta angle gain: `0.55`
-- Armed alpha-beta angular-rate gain: `0.12`
-- Armed alpha-beta residual clamp: `0.05 rad`
+- Alpha-beta angle gain: `0.35`
+- Alpha-beta angular-rate gain: `0.04`
+- Alpha-beta residual clamp: `0.01 rad`
+- Armed alpha-beta angle gain: `0.40`
+- Armed alpha-beta angular-rate gain: `0.06`
+- Armed alpha-beta residual clamp: `0.025 rad`
 - Theta deadband: `0.003 rad`
 - Theta-dot deadband: `0.10 rad/s`
 - Control trigger: `|theta| > 0.045 rad` or `|theta_dot| > 0.30 rad/s` for `2` consecutive samples
-- Settle disarm: `|theta| < 0.025 rad` and `|theta_dot| < 0.12 rad/s` for `25` consecutive samples
+- Settle disarm: `|theta| < 0.03 rad` and `|theta_dot| < 0.15 rad/s` for `25` consecutive samples
 - Theta slew-rate limit: `3.0 rad/s`
 - Acceleration deadband: `0.005 m/s^2`
 - Velocity leak: `0 1/s`
@@ -247,7 +247,7 @@ If the motion is too aggressive for a cautious retest, override the clamps with 
 The default `alpha-beta` estimator is intended to reject the several-degree encoder jumps seen when the pendulum is motionless while still estimating theta-dot with less lag than differentiating a heavily filtered angle. The controller also holds the actuator still until the estimated angle or angular rate exceeds a trigger threshold for several consecutive samples. After a perturbation damps back near zero, it disarms and zeros the speed command so the cart stops chasing encoder jitter. To fall back to the original filter path, use `--estimator legacy`. A more responsive test without making the controller react to every encoder count jump is:
 
 ```powershell
-python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --invert-actuator-command --invert-cart-position --period-s 0.02 --theta-alpha 0.35 --theta-beta 0.04 --max-theta-residual-rad 0.01 --armed-theta-alpha 0.55 --armed-theta-beta 0.12 --armed-max-theta-residual-rad 0.05 --omega-deadband-rad-s 0.10 --theta-deadband-rad 0.003 --accel-deadband-m-s2 0.005 --control-trigger-theta-rad 0.045 --control-trigger-omega-rad-s 0.30 --control-trigger-samples 2 --settle-theta-rad 0.025 --settle-omega-rad-s 0.12 --settle-samples 25
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --invert-actuator-command --invert-cart-position --period-s 0.02
 ```
 
 Initial live motion smoke test:

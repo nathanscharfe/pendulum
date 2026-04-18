@@ -201,3 +201,32 @@ Next:
 - Document the current physical hardware setup and wiring.
 - Verify the actuator speed-to-delay equation on hardware.
 - Decide on the pendulum angle sensing approach.
+
+## 2026-04-18
+
+Downward control tuning reached a usable first-pass baseline on hardware.
+
+Completed:
+
+- Added a host-side `control-down` experiment for the downward pendulum case.
+- Added a downward-equilibrium LQR MATLAB script and documented the first-pass gain.
+- Added host-side sign handling for actuator command, cart position, and encoder angle conventions.
+- Added an `alpha-beta` theta/theta-dot estimator with separate pre-arm and armed tuning.
+- Added trigger/disarm logic so the cart stays quiet when the pendulum is still, engages on real perturbations, and returns to zero command after the motion settles.
+- Tuned the current baseline around repeated bench tests so the cart can recover from multiple manual perturbations without running away or chattering continuously.
+
+Notes:
+
+- Current best-so-far downward control runs showed the cart returning near center and re-engaging after repeated perturbations.
+- Residual oscillation remains after control disarms, but this is now a secondary tuning issue rather than a basic sign or startup-instability problem.
+- The current baseline command is:
+
+```text
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-down --invert-actuator-command --invert-cart-position --period-s 0.02
+```
+
+Next:
+
+- Preserve this downward-control baseline in git before making larger changes.
+- Revisit low-amplitude residual oscillation and tail-phase overreaction with smaller, targeted adjustments.
+- Use the downward case as the host/control baseline before moving on to more ambitious inverted-pendulum work.
