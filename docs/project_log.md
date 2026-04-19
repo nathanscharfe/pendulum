@@ -1,5 +1,33 @@
 # Project Log
 
+## 2026-04-19
+
+Validated the pendulum-1 center-of-mass length with a small-angle free-swing period test and documented the result.
+
+Completed:
+
+- Added a dedicated host-side period-test capture command:
+  - `python -m software.host.main --encoder-port COM8 period-test`
+  - `software/host/main.py`
+  - `software/host/encoder_capture.py`
+- Collected a pendulum-1 period-test capture:
+  - `hardware/magnetic encoder/captures/pendulum 1_period_test_20260419_093442.csv`
+- Added a period-test analysis notebook:
+  - `hardware/magnetic encoder/analysis/analyze_pendulum_1_period_test.ipynb`
+- Updated the host, modeling, and top-level documentation to record the measurement and its agreement with the first-pass MATLAB LQR parameter.
+
+Notes:
+
+- The pendulum-1 free-swing period test gave an average measured period of about `1.42 s`.
+- Under the simple-pendulum assumption, that implies an effective pendulum length of about `0.500 m`.
+- The first-pass MATLAB LQR work used `l = 0.510 m`, so the period test agrees well with the original tape-measure estimate and supports keeping that parameter for now.
+- The analysis notebook was corrected to estimate the full period from same-sign extrema after an earlier half-period mistake temporarily produced an incorrect `0.125 m` estimate.
+
+Next:
+
+- If the pendulum geometry changes, repeat the same period-test workflow and update the model parameter if needed.
+- Keep using `l = 0.510 m` as the current first-pass modeling value unless later hardware changes justify revising it.
+
 ## 2026-04-18
 
 Added host-side magnetic encoder capture tooling and collected initial bench data.

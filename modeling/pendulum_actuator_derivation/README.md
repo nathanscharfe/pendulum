@@ -33,3 +33,10 @@ Current simulation notes:
 - `lqr_downward_first_pass.m` - downward-equilibrium LQR first pass for early bench damping tests
 - `lqr_first_pass_results.md`
 - `lqr_downward_first_pass_results.md`
+
+Recent parameter-validation notes:
+
+- `hardware/magnetic encoder/captures/pendulum 1_period_test_20260419_093442.csv`
+- `hardware/magnetic encoder/analysis/analyze_pendulum_1_period_test.ipynb`
+
+The pendulum-1 free-swing period test gave an average period of about `1.42 s`, which corresponds to an effective simple-pendulum length of about `0.50 m`. That result is close to the `0.510 m` length already used in the first-pass MATLAB LQR scripts, so the original center-of-mass estimate remains a reasonable modeling value for now.

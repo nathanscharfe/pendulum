@@ -172,6 +172,22 @@ To keep the existing encoder zero instead:
 python -m software.host.main --encoder-port COM8 capture-encoder --no-zero-on-start
 ```
 
+Run a dedicated small-angle pendulum period test:
+
+```powershell
+python -m software.host.main --encoder-port COM8 period-test
+```
+
+This command uses the same timestamped encoder logging path, but writes a `pendulum 1_period_test_*.csv` file and gives period-test-specific prompts so you can zero the hanging equilibrium, pull the pendulum back slightly, release it, and analyze the free oscillation later.
+
+Current pendulum-1 check:
+
+- Capture: `hardware/magnetic encoder/captures/pendulum 1_period_test_20260419_093442.csv`
+- Analysis notebook: `hardware/magnetic encoder/analysis/analyze_pendulum_1_period_test.ipynb`
+- Average measured period: about `1.42 s`
+- Inferred simple-pendulum effective length: about `0.50 m`
+- This is close to the `0.510 m` value already used in the first-pass MATLAB LQR model, so the original tape-measure estimate appears reasonable.
+
 Run a first-pass downward pendulum damping experiment:
 
 ```powershell

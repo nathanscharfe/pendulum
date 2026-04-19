@@ -9,7 +9,7 @@ from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
 from .pendulum_control import DownwardControlConfig, UprightControlConfig, run_downward_control, run_upright_control
-from .encoder_capture import run_encoder_capture
+from .encoder_capture import run_encoder_capture, run_period_test_capture
 from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
 from .travel_calibration import DEFAULT_RELATIVE_STEPS, run_travel_calibration
@@ -65,6 +65,10 @@ def build_parser() -> argparse.ArgumentParser:
     capture_encoder = subparsers.add_parser("capture-encoder", help="Record pendulum encoder data until Enter is pressed.")
     capture_encoder.add_argument("--output", type=Path, help="CSV output path.")
     capture_encoder.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
+
+    period_test = subparsers.add_parser("period-test", help="Record a small-angle free-swing pendulum period test to CSV.")
+    period_test.add_argument("--output", type=Path, help="CSV output path.")
+    period_test.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
 
     control_down = subparsers.add_parser("control-down", help="Run a first-pass downward pendulum damping controller and log data.")
     control_down.add_argument("--output", type=Path, help="CSV output path.")
@@ -360,6 +364,13 @@ def main() -> int:
                     print("--encoder-port is required for capture-encoder")
                     return 2
                 run_encoder_capture(encoder, output_path=args.output, zero_on_start=not args.no_zero_on_start)
+                return 0
+
+            if command == "period-test":
+                if encoder is None:
+                    print("--encoder-port is required for period-test")
+                    return 2
+                run_period_test_capture(encoder, output_path=args.output, zero_on_start=not args.no_zero_on_start)
                 return 0
 
             if command == "control-down":

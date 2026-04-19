@@ -18,6 +18,15 @@ Measurement definition:
 - The current pendulum uses an available dowel, so this length is an initial hardware value rather than an optimized design choice.
 - Later design iterations may change the pendulum length if simulations or hardware tests show that a longer or shorter pendulum would work better.
 
+Period-test cross-check:
+
+- `hardware/magnetic encoder/captures/pendulum 1_period_test_20260419_093442.csv`
+- `hardware/magnetic encoder/analysis/analyze_pendulum_1_period_test.ipynb`
+- Average measured free-swing period: about `1.42 s`
+- Inferred simple-pendulum effective length: about `0.500 m = 500 mm`
+
+This period-based estimate is within about `10 mm` of the original `510 mm` tape-measure estimate, so the first-pass LQR model parameter remains consistent with the current hardware measurement.
+
 Gravity:
 
 \[
