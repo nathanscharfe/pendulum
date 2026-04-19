@@ -43,10 +43,10 @@ Completed:
   - `hardware/magnetic encoder/captures/encoder_capture_20260418_113607.csv`
   - `hardware/magnetic encoder/captures/encoder_capture_results.md`
 - Added and ran a downward-equilibrium LQR simulation for early bench damping tests:
-  - `modeling/pendulum_actuator_derivation/lqr_downward_first_pass.m`
-  - `modeling/pendulum_actuator_derivation/lqr_downward_first_pass_results.md`
-  - `modeling/pendulum_actuator_derivation/LQR_downward_closed_loop_response.fig`
-  - `modeling/pendulum_actuator_derivation/LQR_downward_closed_loop_response.png`
+  - `modeling/pendulum_actuator_derivation/scripts/lqr_downward_first_pass.m`
+  - `modeling/pendulum_actuator_derivation/results/downward_first_pass/lqr_downward_first_pass_results.md`
+  - `modeling/pendulum_actuator_derivation/results/downward_first_pass/LQR_downward_closed_loop_response.fig`
+  - `modeling/pendulum_actuator_derivation/results/downward_first_pass/LQR_downward_closed_loop_response.png`
 
 Notes:
 
@@ -75,14 +75,14 @@ Completed:
 - Marked the AS5600 magnetic encoder reader firmware complete for the current setup.
 - Added first-pass pendulum-actuator modeling notes:
   - `modeling/pendulum_actuator_derivation/README.md`
-  - `modeling/pendulum_actuator_derivation/parameters.md`
-  - `modeling/pendulum_actuator_derivation/inverted pendulum derivation.pdf`
-  - `modeling/pendulum_actuator_derivation/torque_diagram.svg`
+  - `modeling/pendulum_actuator_derivation/docs/parameters.md`
+  - `modeling/pendulum_actuator_derivation/docs/inverted pendulum derivation.pdf`
+  - `modeling/pendulum_actuator_derivation/docs/torque_diagram.svg`
 - Added and ran an initial MATLAB LQR simulation:
-  - `modeling/pendulum_actuator_derivation/lqr_first_pass.m`
-  - `modeling/pendulum_actuator_derivation/lqr_first_pass_results.md`
-  - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.fig`
-  - `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.png`
+  - `modeling/pendulum_actuator_derivation/scripts/lqr_first_pass.m`
+  - `modeling/pendulum_actuator_derivation/results/upright_first_pass/lqr_first_pass_results.md`
+  - `modeling/pendulum_actuator_derivation/results/upright_first_pass/LQR_closed_loop_response.fig`
+  - `modeling/pendulum_actuator_derivation/results/upright_first_pass/LQR_closed_loop_response.png`
 - Added an initial Python host software scaffold:
   - `software/host/README.md`
   - `software/host/requirements.txt`

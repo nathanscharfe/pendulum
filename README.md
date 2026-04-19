@@ -115,13 +115,17 @@ Current hardware-related files:
 Current modeling and control files:
 
 - `modeling/pendulum_actuator_derivation/README.md`
-- `modeling/pendulum_actuator_derivation/parameters.md`
-- `modeling/pendulum_actuator_derivation/inverted pendulum derivation.pdf`
-- `modeling/pendulum_actuator_derivation/lqr_first_pass.m`
-- `modeling/pendulum_actuator_derivation/lqr_first_pass_results.md`
-- `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.fig`
-- `modeling/pendulum_actuator_derivation/LQR_closed_loop_response.png`
-- `modeling/pendulum_actuator_derivation/torque_diagram.svg`
+- `modeling/pendulum_actuator_derivation/docs/parameters.md`
+- `modeling/pendulum_actuator_derivation/docs/inverted pendulum derivation.pdf`
+- `modeling/pendulum_actuator_derivation/docs/torque_diagram.svg`
+- `modeling/pendulum_actuator_derivation/scripts/lqr_first_pass.m`
+- `modeling/pendulum_actuator_derivation/scripts/lqr_downward_first_pass.m`
+- `modeling/pendulum_actuator_derivation/scripts/lqr_upright_length_qr_sweep.m`
+- `modeling/pendulum_actuator_derivation/results/upright_first_pass/lqr_first_pass_results.md`
+- `modeling/pendulum_actuator_derivation/results/upright_first_pass/LQR_closed_loop_response.fig`
+- `modeling/pendulum_actuator_derivation/results/upright_first_pass/LQR_closed_loop_response.png`
+- `modeling/pendulum_actuator_derivation/results/downward_first_pass/lqr_downward_first_pass_results.md`
+- `modeling/pendulum_actuator_derivation/results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_summary.csv`
 
 Current host software files:
 

@@ -4,7 +4,7 @@ GitHub issue: #20, `Derive initial pendulum-actuator state-space model`
 
 Simulation script:
 
-- `lqr_first_pass.m`
+- `../../scripts/lqr_first_pass.m`
 
 Saved response figure:
 

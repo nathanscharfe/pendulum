@@ -1,7 +1,7 @@
 %% First-pass LQR model for the inverted pendulum on a linear actuator
 %
 % This script uses the simplified point-mass model documented in
-% parameters.md. The actuator input is idealized as commanded cart
+% ../docs/parameters.md. The actuator input is idealized as commanded cart
 % acceleration:
 %
 %   u = x_ddot
@@ -13,6 +13,12 @@
 % where theta = 0 is the upright equilibrium.
 
 clear; clc; close all;
+
+script_dir = fileparts(mfilename('fullpath'));
+results_dir = fullfile(script_dir, '..', 'results', 'upright_first_pass');
+if ~exist(results_dir, 'dir')
+    mkdir(results_dir);
+end
 
 %% Physical parameters
 
@@ -106,6 +112,9 @@ grid on;
 ylabel('u [m/s^2]');
 xlabel('time [s]');
 end
+
+savefig(fullfile(results_dir, 'LQR_closed_loop_response.fig'));
+exportgraphics(gcf, fullfile(results_dir, 'LQR_closed_loop_response.png'), 'Resolution', 150);
 
 fprintf('Peak commanded acceleration: %.3f m/s^2\n', max(abs(u)));
 fprintf('Peak cart displacement: %.3f m\n', max(abs(X(:, 1))));

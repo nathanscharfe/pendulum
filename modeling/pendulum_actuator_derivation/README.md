@@ -19,20 +19,41 @@ GitHub issue: #20, `Derive initial pendulum-actuator state-space model`
 - The first model may neglect bearing friction, actuator compliance, and sensor delay unless those effects are needed later.
 - The actuator command can be represented initially by a base acceleration or an equivalent commanded motion input.
 
-## Notes
+## Layout
 
-Add derivation notes, sketches, equations, and model parameters here as they are developed.
+This folder is organized into:
 
-Current parameter notes:
+- `docs/` - shared derivation notes, parameter notes, and reference figures
+- `scripts/` - MATLAB analysis scripts
+- `results/` - generated figures, CSV summaries, and per-analysis notes
 
-- `parameters.md`
+Shared modeling notes:
 
-Current simulation notes:
+- `docs/parameters.md`
+- `docs/inverted pendulum derivation.pdf`
+- `docs/torque_diagram.svg`
 
-- `lqr_first_pass.m` - upright-equilibrium LQR first pass
-- `lqr_downward_first_pass.m` - downward-equilibrium LQR first pass for early bench damping tests
-- `lqr_first_pass_results.md`
-- `lqr_downward_first_pass_results.md`
+MATLAB scripts:
+
+- `scripts/lqr_first_pass.m` - upright-equilibrium LQR first pass
+- `scripts/lqr_downward_first_pass.m` - downward-equilibrium LQR first pass for early bench damping tests
+- `scripts/lqr_upright_length_qr_sweep.m` - upright-equilibrium sweep across pendulum length and several Q/R choices
+
+Saved results:
+
+- `results/upright_first_pass/lqr_first_pass_results.md`
+- `results/upright_first_pass/LQR_closed_loop_response.fig`
+- `results/upright_first_pass/LQR_closed_loop_response.png`
+- `results/downward_first_pass/lqr_downward_first_pass_results.md`
+- `results/downward_first_pass/LQR_downward_closed_loop_response.fig`
+- `results/downward_first_pass/LQR_downward_closed_loop_response.png`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_summary.csv`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_theta.fig`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_theta.png`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_x.fig`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_x.png`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_tradeoffs.fig`
+- `results/upright_length_qr_sweep/lqr_upright_length_qr_sweep_tradeoffs.png`
 
 Recent parameter-validation notes:
 

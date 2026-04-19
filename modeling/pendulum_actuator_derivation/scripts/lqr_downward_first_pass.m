@@ -19,6 +19,12 @@
 
 clear; clc; close all;
 
+script_dir = fileparts(mfilename('fullpath'));
+results_dir = fullfile(script_dir, '..', 'results', 'downward_first_pass');
+if ~exist(results_dir, 'dir')
+    mkdir(results_dir);
+end
+
 %% Physical parameters
 
 g = 9.81;      % gravity [m/s^2]
@@ -118,8 +124,8 @@ grid on;
 ylabel('u [m/s^2]');
 xlabel('time [s]');
 
-savefig('LQR_downward_closed_loop_response.fig');
-exportgraphics(gcf, 'LQR_downward_closed_loop_response.png', 'Resolution', 150);
+savefig(fullfile(results_dir, 'LQR_downward_closed_loop_response.fig'));
+exportgraphics(gcf, fullfile(results_dir, 'LQR_downward_closed_loop_response.png'), 'Resolution', 150);
 end
 
 fprintf('Peak commanded acceleration: %.3f m/s^2\n', max(abs(u)));

@@ -2,7 +2,7 @@
 
 Simulation script:
 
-- `lqr_downward_first_pass.m`
+- `../../scripts/lqr_downward_first_pass.m`
 
 Saved response figure:
 
