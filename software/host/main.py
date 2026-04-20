@@ -73,6 +73,13 @@ def build_parser() -> argparse.ArgumentParser:
     control_down = subparsers.add_parser("control-down", help="Run a first-pass downward pendulum damping controller and log data.")
     control_down.add_argument("--output", type=Path, help="CSV output path.")
     control_down.add_argument("--period-s", type=float, default=0.05)
+    control_down.add_argument("--lqr-mode", choices=["python", "manual"], default="python", help="Use Python LQR synthesis from pendulum length and Q/R, or use explicit gain values.")
+    control_down.add_argument("--pendulum-length-m", type=float, default=0.510, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
+    control_down.add_argument("--q-x", type=float, default=1.0, help="Downward LQR cart-position weight for Python synthesis.")
+    control_down.add_argument("--q-x-dot", type=float, default=0.1, help="Downward LQR cart-velocity weight for Python synthesis.")
+    control_down.add_argument("--q-theta", type=float, default=5.0, help="Downward LQR pendulum-angle weight for Python synthesis.")
+    control_down.add_argument("--q-omega", type=float, default=1.0, help="Downward LQR pendulum angular-rate weight for Python synthesis.")
+    control_down.add_argument("--r-input", type=float, default=10.0, help="Downward LQR input weight for Python synthesis.")
     control_down.add_argument("--x-gain", type=float, default=0.3162, help="Downward LQR cart-position gain.")
     control_down.add_argument("--x-dot-gain", type=float, default=0.8139, help="Downward LQR cart-velocity gain.")
     control_down.add_argument("--theta-gain", type=float, default=-0.3088, help="Downward LQR theta gain.")
@@ -130,6 +137,13 @@ def build_parser() -> argparse.ArgumentParser:
     control_up = subparsers.add_parser("control-up", help="Run a first-pass upright pendulum balancing controller and log data.")
     control_up.add_argument("--output", type=Path, help="CSV output path.")
     control_up.add_argument("--period-s", type=float, default=0.01)
+    control_up.add_argument("--lqr-mode", choices=["python", "manual"], default="python", help="Use Python LQR synthesis from pendulum length and Q/R, or use explicit gain values.")
+    control_up.add_argument("--pendulum-length-m", type=float, default=0.510, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
+    control_up.add_argument("--q-x", type=float, default=1.0, help="Upright LQR cart-position weight for Python synthesis.")
+    control_up.add_argument("--q-x-dot", type=float, default=0.1, help="Upright LQR cart-velocity weight for Python synthesis.")
+    control_up.add_argument("--q-theta", type=float, default=50.0, help="Upright LQR pendulum-angle weight for Python synthesis.")
+    control_up.add_argument("--q-omega", type=float, default=1.0, help="Upright LQR pendulum angular-rate weight for Python synthesis.")
+    control_up.add_argument("--r-input", type=float, default=1.0, help="Upright LQR input weight for Python synthesis.")
     control_up.add_argument("--x-gain", type=float, default=-1.0, help="Upright LQR cart-position gain.")
     control_up.add_argument("--x-dot-gain", type=float, default=-2.0104, help="Upright LQR cart-velocity gain.")
     control_up.add_argument("--theta-gain", type=float, default=-29.1450, help="Upright LQR theta gain.")
@@ -156,7 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--settle-samples", type=int, default=25, help="Consecutive settled samples required before disarming control.")
     control_up.add_argument("--velocity-leak-per-s", type=float, default=0.0)
     control_up.add_argument("--max-accel-m-s2", type=float, default=4.0)
-    control_up.add_argument("--max-speed-mm-s", type=float, default=315.0)
+    control_up.add_argument("--max-speed-mm-s", type=float, default=325.0)
     control_up.add_argument("--max-angle-rad", type=float, default=0.35)
     control_up.add_argument(
         "--invert-control",
@@ -379,6 +393,13 @@ def main() -> int:
                     return 2
                 control_config = DownwardControlConfig(
                     period_s=args.period_s,
+                    lqr_mode=args.lqr_mode,
+                    pendulum_length_m=args.pendulum_length_m,
+                    lqr_q_x=args.q_x,
+                    lqr_q_x_dot=args.q_x_dot,
+                    lqr_q_theta=args.q_theta,
+                    lqr_q_theta_dot=args.q_omega,
+                    lqr_r_input=args.r_input,
                     lqr_x_gain=args.x_gain,
                     lqr_x_dot_gain=args.x_dot_gain,
                     lqr_theta_gain=args.theta_gain,
@@ -433,6 +454,13 @@ def main() -> int:
                     return 2
                 control_config = UprightControlConfig(
                     period_s=args.period_s,
+                    lqr_mode=args.lqr_mode,
+                    pendulum_length_m=args.pendulum_length_m,
+                    lqr_q_x=args.q_x,
+                    lqr_q_x_dot=args.q_x_dot,
+                    lqr_q_theta=args.q_theta,
+                    lqr_q_theta_dot=args.q_omega,
+                    lqr_r_input=args.r_input,
                     lqr_x_gain=args.x_gain,
                     lqr_x_dot_gain=args.x_dot_gain,
                     lqr_theta_gain=args.theta_gain,

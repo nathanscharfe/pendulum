@@ -36,9 +36,10 @@ Important notes:
 - The angle at the moment you type `start` becomes the controller's zero reference, so careful manual alignment still matters.
 - The current upright setup uses a latch servo on Arduino #2 (`D7`) so the pendulum can be staged before release.
 - The current best upright runs used no cart-centering term, so the plain `control-up` command above is the baseline test.
-- The measured no-stall actuator ceiling is about `315 mm/s`, and the current upright default speed clamp matches that measured limit.
+- The measured no-stall actuator ceiling was about `315 mm/s`, and the current upright default speed clamp is now slightly higher at `325 mm/s` for experimental testing.
 - Output logs are written under `hardware/control experiments/upright/`.
 - Analysis notebook: `hardware/control experiments/analysis/analyze_upright_control.ipynb`
+- Each upright and downward control CSV now records the full run configuration, including `lqr_mode`, pendulum length, `Q`, `R`, resolved gains, clamps, estimator settings, trigger thresholds, and sign conventions as `config_*` columns.
 
 ## Run A Pendulum Period Test
 

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, replace
 from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
 from time import monotonic, sleep
 from typing import Callable
+
+import numpy as np
+from scipy.linalg import solve_continuous_are
 
 from .arduino_actuator import ActuatorController
 from .arduino_encoder import EncoderReader
@@ -18,6 +21,13 @@ from .serial_worker import SerialSnapshot
 @dataclass(frozen=True)
 class PendulumControlConfig:
     period_s: float = 0.05
+    lqr_mode: str = "python"
+    pendulum_length_m: float = 0.510
+    lqr_q_x: float = 1.0
+    lqr_q_x_dot: float = 0.1
+    lqr_q_theta: float = 5.0
+    lqr_q_theta_dot: float = 1.0
+    lqr_r_input: float = 10.0
     lqr_x_gain: float = 0.3162
     lqr_x_dot_gain: float = 0.8139
     lqr_theta_gain: float = -0.3088
@@ -64,6 +74,8 @@ class DownwardControlConfig(PendulumControlConfig):
 @dataclass(frozen=True)
 class UprightControlConfig(PendulumControlConfig):
     period_s: float = 0.01
+    lqr_q_theta: float = 50.0
+    lqr_r_input: float = 1.0
     lqr_x_gain: float = -1.0
     lqr_x_dot_gain: float = -2.0104
     lqr_theta_gain: float = -29.1450
@@ -74,7 +86,7 @@ class UprightControlConfig(PendulumControlConfig):
     control_trigger_theta_dot_rad_s: float = 0.0
     control_trigger_samples: int = 0
     max_acceleration_m_s2: float = 4.0
-    max_speed_mm_s: float = 315.0
+    max_speed_mm_s: float = 325.0
 
 
 CONTROL_FIELDS = [
@@ -119,6 +131,8 @@ CONTROL_FIELDS = [
     "stop_reason",
 ]
 
+CONFIG_LOG_FIELDS = [f"config_{field.name}" for field in fields(UprightControlConfig)]
+
 
 def default_output_path(prefix: str = "downward_control", subdir: str = "downward") -> Path:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -138,9 +152,11 @@ def run_downward_control(
     experiment_name: str = "Downward pendulum control experiment",
     start_instruction: str = "Start with the cart near center and the pendulum hanging downward and motionless.",
     start_prompt: str = "Let the pendulum hang downward and motionless, then press Enter to zero the encoder and arm automatic control...",
+    lqr_equilibrium: str = "downward",
     pre_setup_sequence: Callable[[LimitSensorReader], None] | None = None,
     startup_sequence: Callable[[LimitSensorReader, EncoderReader, PendulumControlConfig], None] | None = None,
 ) -> Path:
+    control_config = resolve_lqr_config(control_config, equilibrium=lqr_equilibrium)
     output_path = output_path or default_output_path(output_prefix, output_subdir)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -161,6 +177,14 @@ def run_downward_control(
         print(f"Setup: move to midpoint at {control_config.middle_speed_mm_s:g} mm/s")
     print("Controller: full-state LQR acceleration command integrated to actuator speed")
     print("u_m_s2 = actuator_sign * -K[x, x_dot, theta, theta_dot], with filtering, deadbands, and speed clamps")
+    print(
+        "LQR synthesis: "
+        f"mode={control_config.lqr_mode}, "
+        f"l={control_config.pendulum_length_m:g} m, "
+        f"Q=diag([{control_config.lqr_q_x:g}, {control_config.lqr_q_x_dot:g}, "
+        f"{control_config.lqr_q_theta:g}, {control_config.lqr_q_theta_dot:g}]), "
+        f"R={control_config.lqr_r_input:g}"
+    )
     print(
         "Gains: "
         f"Kx={control_config.lqr_x_gain:g}, "
@@ -228,12 +252,25 @@ def run_downward_control(
     else:
         startup_sequence(limits, encoder, control_config)
 
+    arm_reference_snapshot = encoder.get_latest()
+    arm_reference_timestamp_s = arm_reference_snapshot.timestamp_s if arm_reference_snapshot is not None else 0.0
+
     actuator.clear_snapshots()
     limits.clear_snapshots()
     encoder.clear_snapshots()
 
     actuator.enable()
     start_enter_stop_thread(stop_event)
+
+    fresh_encoder_snapshot = wait_for_new_snapshot(
+        encoder,
+        newer_than_timestamp_s=arm_reference_timestamp_s,
+        timeout_s=max(1.0, 5.0 * control_config.period_s),
+    )
+    if fresh_encoder_snapshot is None:
+        actuator.stop_motion()
+        actuator.disable()
+        raise RuntimeError("No fresh encoder sample arrived after arming control.")
 
     start_s = monotonic()
     next_loop_s = start_s
@@ -497,6 +534,7 @@ def run_upright_control(
         experiment_name="Upright pendulum control experiment",
         start_instruction="Start with the cart near center and the pendulum held upright.",
         start_prompt="",
+        lqr_equilibrium="upright",
         pre_setup_sequence=release_upright_servo_for_setup,
         startup_sequence=upright_servo_startup_sequence,
     )
@@ -517,6 +555,68 @@ def compute_lqr_acceleration(
     )
     command = config.actuator_command_sign * model_acceleration_m_s2
     return clamp(command, -config.max_acceleration_m_s2, config.max_acceleration_m_s2)
+
+
+def resolve_lqr_config(config: PendulumControlConfig, equilibrium: str) -> PendulumControlConfig:
+    if config.lqr_mode == "manual":
+        return config
+
+    k_x, k_x_dot, k_theta, k_theta_dot = synthesize_lqr_gains(
+        pendulum_length_m=config.pendulum_length_m,
+        q_x=config.lqr_q_x,
+        q_x_dot=config.lqr_q_x_dot,
+        q_theta=config.lqr_q_theta,
+        q_theta_dot=config.lqr_q_theta_dot,
+        r_input=config.lqr_r_input,
+        equilibrium=equilibrium,
+    )
+    return replace(
+        config,
+        lqr_x_gain=k_x,
+        lqr_x_dot_gain=k_x_dot,
+        lqr_theta_gain=k_theta,
+        lqr_theta_dot_gain=k_theta_dot,
+    )
+
+
+def synthesize_lqr_gains(
+    pendulum_length_m: float,
+    q_x: float,
+    q_x_dot: float,
+    q_theta: float,
+    q_theta_dot: float,
+    r_input: float,
+    equilibrium: str,
+) -> tuple[float, float, float, float]:
+    if pendulum_length_m <= 0.0:
+        raise ValueError("pendulum_length_m must be positive")
+    if any(weight <= 0.0 for weight in (q_x, q_x_dot, q_theta, q_theta_dot, r_input)):
+        raise ValueError("LQR Q and R weights must be positive")
+
+    gravity_term = 9.81 / pendulum_length_m
+    if equilibrium == "upright":
+        a_43 = gravity_term
+    elif equilibrium == "downward":
+        a_43 = -gravity_term
+    else:
+        raise ValueError(f"unknown equilibrium {equilibrium}")
+
+    a_matrix = np.array(
+        [
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, a_43, 0.0],
+        ],
+        dtype=float,
+    )
+    b_matrix = np.array([[0.0], [1.0], [0.0], [-1.0 / pendulum_length_m]], dtype=float)
+    q_matrix = np.diag([q_x, q_x_dot, q_theta, q_theta_dot]).astype(float)
+    r_matrix = np.array([[r_input]], dtype=float)
+
+    p_matrix = solve_continuous_are(a_matrix, b_matrix, q_matrix, r_matrix)
+    gain_matrix = np.linalg.solve(r_matrix, b_matrix.T @ p_matrix)
+    return tuple(float(value) for value in gain_matrix.ravel())
 
 
 def update_alpha_beta_estimate(
@@ -676,6 +776,21 @@ def latest_limit_state(limits: LimitSensorReader) -> SerialSnapshot | None:
     return latest
 
 
+def wait_for_new_snapshot(
+    worker: EncoderReader,
+    newer_than_timestamp_s: float,
+    timeout_s: float,
+) -> SerialSnapshot | None:
+    start_s = monotonic()
+    while True:
+        snapshot = worker.get_latest()
+        if snapshot is not None and snapshot.timestamp_s > newer_than_timestamp_s:
+            return snapshot
+        if monotonic() - start_s >= timeout_s:
+            return None
+        sleep(0.001)
+
+
 def build_log_row(
     elapsed_s: float,
     encoder_snapshot: SerialSnapshot,
@@ -700,8 +815,7 @@ def build_log_row(
 ) -> dict[str, object]:
     actuator_data = actuator_snapshot.data if actuator_snapshot is not None else {}
     command_step_rate_s = command_speed_mm_s * motion_config.steps_per_mm
-
-    return {
+    row = {
         "host_elapsed_s": f"{elapsed_s:.6f}",
         "host_timestamp_s": f"{encoder_snapshot.timestamp_s:.6f}",
         "encoder_time_ms": encoder_snapshot.data["time_ms"],
@@ -742,11 +856,19 @@ def build_log_row(
         "command_acceleration_m_s2": f"{command_acceleration_m_s2:.6f}",
         "stop_reason": stop_reason,
     }
+    row.update(
+        {
+            f"config_{field.name}": format_config_value(getattr(control_config, field.name))
+            for field in fields(control_config)
+        }
+    )
+    return row
 
 
 def write_rows(output_path: Path, rows: list[dict[str, object]]) -> None:
+    fieldnames = [*CONTROL_FIELDS, *CONFIG_LOG_FIELDS]
     with output_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CONTROL_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -764,6 +886,12 @@ def write_snapshot_history(output_path: Path, snapshots: list[SerialSnapshot]) -
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
+
+
+def format_config_value(value: object) -> object:
+    if isinstance(value, float):
+        return f"{value:.6f}"
+    return value
 
 
 def lowpass(previous: float | None, value: float, alpha: float) -> float:

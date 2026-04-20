@@ -293,3 +293,54 @@ Next:
 - Compare servo-assisted starts directly against manual starts to separate release-transient effects from controller limitations.
 - Consider mechanical changes that slow the upright dynamics or reduce release disturbance, including pendulum length and latch geometry.
 - Use the new staging-loop `g` timing metric to quantify release repeatability before further controller changes.
+
+## 2026-04-19
+
+Moved the host-side pendulum control workflow away from fixed MATLAB-exported gains and toward Python-side LQR synthesis tied directly to the pendulum length and requested cost weights.
+
+Completed:
+
+- Added Python LQR synthesis inside the host controller using the same linearized model structure as the MATLAB first-pass scripts:
+  - `software/host/pendulum_control.py`
+  - `software/host/requirements.txt`
+- Exposed on-demand LQR tuning from the CLI for both `control-down` and `control-up`:
+  - `--lqr-mode {python,manual}`
+  - `--pendulum-length-m`
+  - `--q-x`
+  - `--q-x-dot`
+  - `--q-theta`
+  - `--q-omega`
+  - `--r-input`
+  - `software/host/main.py`
+- Kept compatibility with manual gain entry so hardware runs can still use explicit `K` values when desired.
+- Increased the upright default speed clamp from `315 mm/s` to `325 mm/s` for further bench testing:
+  - `software/host/main.py`
+  - `software/host/pendulum_control.py`
+  - `software/host/README.md`
+- Added a startup guard that waits for a fresh encoder snapshot after arming so the control loop does not launch on stale pre-zero data:
+  - `software/host/pendulum_control.py`
+- Updated control CSV logging so every run records the full controller configuration as `config_*` columns:
+  - LQR mode
+  - pendulum length
+  - `Q`, `R`
+  - resolved gains
+  - estimator settings
+  - deadbands, clamps, trigger/disarm settings
+  - sign conventions and setup flags
+- Updated the upright analysis notebook so it prints the active log path and displays the `config_*` summary clearly near the top:
+  - `hardware/control experiments/analysis/analyze_upright_control.ipynb`
+- Updated project-facing docs to describe the new Python tuning workflow and self-describing control logs:
+  - `README.md`
+  - `software/host/README.md`
+
+Notes:
+
+- The host now defaults to computing `K` directly from the pendulum length and chosen `Q`, `R`, which removes the need to round-trip through MATLAB for routine gain changes.
+- The default upright and downward Python synthesis settings were chosen to reproduce the earlier first-pass MATLAB gains closely, so the tuning baseline remains continuous with prior work.
+- The new `config_*` fields make later notebook analysis much easier because the run settings now travel with the data.
+
+Next:
+
+- Re-test upright control once the encoder and magnet hardware rework is installed.
+- Use the logged `config_*` fields to compare successful and failed runs without relying on terminal notes.
+- Decide whether to add a hard startup refusal when encoder magnetic diagnostics indicate that the magnet is missing or too weak.

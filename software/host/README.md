@@ -222,16 +222,34 @@ The upright command uses the upright-equilibrium first-pass LQR gain from `lqr_f
 K = [-1.0, -2.0104, -29.1450, -6.5238]
 ```
 
+The host now computes these LQR gains directly in Python by default from the pendulum length and the requested `Q` and `R` weights, using the same linearized model as the MATLAB scripts. The default upright and downward settings reproduce the original first-pass MATLAB gains to numerical precision.
+
+Useful control-synthesis arguments for `control-down` and `control-up`:
+
+- `--lqr-mode python`: compute gains from `l`, `Q`, and `R` inside Python. This is now the default.
+- `--lqr-mode manual`: bypass Python synthesis and use the explicit `--x-gain`, `--x-dot-gain`, `--theta-gain`, and `--omega-gain` values.
+- `--pendulum-length-m 0.75`: change the modeled pendulum length without editing code.
+- `--q-x 1 --q-x-dot 0.1 --q-theta 50 --q-omega 1 --r-input 1`: change the LQR cost weights on demand.
+- `--center-gain 0.2`: add an extra post-LQR cart-centering term in `1/s` if you want the cart to bias back toward track center.
+
+Example upright command with a different pendulum length and custom `Q`, `R`:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up --pendulum-length-m 0.75 --q-x 1 --q-x-dot 0.1 --q-theta 80 --q-omega 2 --r-input 2
+```
+
 Because the upright first-pass LQR wants substantially more authority than the downward case, the upright command defaults to a larger acceleration and speed clamp:
 
 - Control period: `0.01 s`
-- Speed clamp: `+/-315 mm/s`
+- Speed clamp: `+/-325 mm/s`
 - Acceleration clamp: `+/-4.0 m/s^2`
 - Control trigger: immediate arm after Enter and encoder zeroing
 
-The `315 mm/s` upright speed clamp is based on a measured bench limit: faster commanded speeds caused the present actuator setup to stall.
+The `325 mm/s` upright speed clamp is the current host default for upright testing. It is slightly above the earlier measured no-stall `315 mm/s` baseline, so treat it as an experimental increase and back it off if the actuator shows signs of stalling.
 
 It estimates the full state `[x, x_dot, theta, theta_dot]`, computes `u = -KX`, and integrates that acceleration command into the actuator step-rate interface. The command includes filtering, theta slew-rate limiting, and deadbands so a motionless pendulum does not make the actuator chatter.
+
+Each control CSV now logs the full controller configuration on every row using `config_*` columns. That includes the selected LQR synthesis mode, pendulum length, `Q` and `R`, resolved gains, clamps, deadbands, trigger/disarm settings, estimator parameters, and sign conventions. The upright analysis notebook prints the active CSV path and summarizes those `config_*` fields near the top so each run can be interpreted without checking the terminal history.
 
 Default controller behavior:
 
