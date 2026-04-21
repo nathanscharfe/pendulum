@@ -8,15 +8,15 @@ The project was inspired by my `ASE 381P-3 Optimal Control` class with Dr. Bakol
 
 Watch on YouTube:
 
-- https://youtu.be/PwRp1dHTPdM
+- https://youtu.be/KnxtTf5F7fo
 
 Local fallback:
 
-<video src="inverted_pendulum.mp4" controls muted playsinline></video>
+<video src="docs/media/upright_balance_run_2026-04-21.mp4" controls muted playsinline></video>
 
 If your Markdown viewer does not render embedded video, open:
 
-- `inverted_pendulum.mp4`
+- `docs/media/upright_balance_run_2026-04-21.mp4`
 
 This clip shows the current successful upright controller balancing the pendulum on real hardware.
 

@@ -2,6 +2,30 @@
 
 ## 2026-04-21
 
+Reorganized the project video assets and updated the top-level demo link to the newest upright-balance video.
+
+Completed:
+
+- Moved the current showcase video into the project media folder:
+  - `docs/media/upright_balance_run_2026-04-21.mp4`
+- Archived the previous top-level local fallback video into the same media folder:
+  - `docs/media/upright_balance_run_2026-04-21_previous.mp4`
+- Kept the older April 18 demo video in the same location for historical reference:
+  - `docs/media/upright_balance_run_2026-04-18.mp4`
+- Updated the top-level README to:
+  - point to the new YouTube demo `https://youtu.be/KnxtTf5F7fo`
+  - use `docs/media/` as the local fallback video location
+
+Notes:
+
+- The repository video convention is now to keep showcase MP4s under `docs/media/` instead of mixing media files at the repository root.
+
+Next:
+
+- Keep future public/demo videos under `docs/media/` with date-based names so the README can be updated without moving files again.
+
+## 2026-04-21
+
 Added a live upright-control UI for bench tuning and updated the current upright defaults and plotting workflow around that interface.
 
 Completed:
