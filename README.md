@@ -1,6 +1,6 @@
-# Pendulum Optimal Control Demonstration
+# Inverted Pendulum Optimal Control Demonstration
 
-This project is a successful real-hardware optimal control demonstration for a pendulum mounted to a linear actuator. The repository now includes hardware, modeling, firmware, host-side control software, and experimental results for repeatable upright balancing with an LQR-based controller.
+This project is a successful real-hardware optimal control demonstration for an inverted pendulum mounted to a linear actuator. The repository now includes hardware, modeling, firmware, host-side control software, and experimental results for repeatable upright balancing with an LQR-based controller.
 
 The project was inspired by my `ASE 381P-3 Optimal Control` class with Dr. Bakolas at The University of Texas at Austin.
 
