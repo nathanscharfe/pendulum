@@ -25,7 +25,7 @@ This clip shows the current successful upright controller balancing the pendulum
 From the repository root, run:
 
 ```powershell
-python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up --pendulum-length-m 0.50 --q-x 1 --q-x-dot 0.1 --q-theta 50 --q-omega 1 --r-input 1
+python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
 ```
 
 What to expect:
@@ -43,7 +43,10 @@ Important notes:
 
 - The angle at the moment you type `start` becomes the controller's zero reference, so careful manual alignment still matters.
 - The current upright setup uses a latch servo on Arduino #2 (`D7`) so the pendulum can be staged before release.
-- The repeatably working upright setup currently uses the exact command shown above.
+- The repeatably working upright setup currently uses the default Python LQR upright settings with:
+  - `pendulum-length-m = 0.50`
+  - `Q = diag([1, 0.1, 50, 1])`
+  - `R = 1`
 - The most recent saved successful run is:
   - `hardware/control experiments/upright/successful_repeatable_upright_balance_20260421_113304.csv`
 - The measured no-stall actuator ceiling was about `315 mm/s`, and the current upright default speed clamp is now `350 mm/s` for experimental testing.

@@ -251,7 +251,7 @@ Because the upright first-pass LQR wants substantially more authority than the d
 - Control period: `0.01 s`
 - Speed clamp: `+/-350 mm/s`
 - Acceleration clamp: `+/-30.0 m/s^2`
-- Control trigger: immediate arm after Enter and encoder zeroing
+- Control trigger: re-arm only after `|theta| > 0.015 rad` or `|theta_dot| > 0.08 rad/s` for `3` consecutive samples
 
 The `350 mm/s` upright speed clamp is the current host default for upright testing. It is above the earlier measured no-stall `315 mm/s` baseline, so treat it as an experimental increase and back it off if the actuator shows signs of stalling.
 

@@ -85,9 +85,9 @@ class UprightControlConfig(PendulumControlConfig):
     lqr_theta_dot_gain: float = -6.5238
     armed_theta_alpha: float = 0.40
     armed_theta_beta: float = 0.06
-    control_trigger_theta_rad: float = 0.0
-    control_trigger_theta_dot_rad_s: float = 0.0
-    control_trigger_samples: int = 0
+    control_trigger_theta_rad: float = 0.015
+    control_trigger_theta_dot_rad_s: float = 0.08
+    control_trigger_samples: int = 3
     settle_theta_rad: float = 0.01
     settle_theta_dot_rad_s: float = 0.05
     settle_samples: int = 50

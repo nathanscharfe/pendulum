@@ -2,6 +2,32 @@
 
 ## 2026-04-21
 
+Added upright-control hysteresis so the cart can stop making tiny corrective moves once the pendulum is balanced near upright.
+
+Completed:
+
+- Updated the upright host defaults to require a small but nonzero disturbance before re-arming after a settled upright state:
+  - `software/host/pendulum_control.py`
+  - `software/host/main.py`
+- Kept the existing upright settle thresholds and widened the gap between settle and re-arm behavior so the controller can truly stand down instead of immediately waking back up on jitter.
+- Updated host-side documentation to describe the new upright re-arm behavior:
+  - `software/host/README.md`
+- Updated the top-level README upright run command to match the current default-based working workflow:
+  - `README.md`
+
+Notes:
+
+- The prior upright defaults allowed immediate re-arm after disarming, which made low-amplitude residual motion look like a reason to keep chasing the pendulum even after it was effectively balanced.
+- The new upright defaults re-arm only after `|theta| > 0.015 rad` or `|theta_dot| > 0.08 rad/s` for `3` consecutive samples.
+- The settle condition remains `|theta| < 0.01 rad` and `|theta_dot| < 0.05 rad/s` for `50` consecutive samples, so the controller now has a deliberate hysteresis gap between "stop helping" and "help again."
+
+Next:
+
+- Re-test upright control over longer runs to see whether reduced tail-phase chatter also reduces long-term cart drift.
+- If needed, tune the new re-arm thresholds from the latest control CSVs rather than continuing by feel alone.
+
+## 2026-04-21
+
 Reached repeatable successful upright balancing on hardware and updated the top-level project presentation to reflect that milestone.
 
 Completed:
