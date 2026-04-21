@@ -208,6 +208,19 @@ Run a first-pass upright pendulum balancing experiment:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
 ```
 
+Open a UI for upright automatic control:
+
+```powershell
+python -m software.host.main control-up-ui
+```
+
+The upright-control UI uses the current bench defaults `COM6`, `COM10`, and `COM8` if ports are not provided. When it opens, it automatically connects to the three Arduinos, releases the latch for setup moves, homes left, moves to the midpoint, and then waits for you to press `Start Automatic Control`. The window includes:
+
+- A live combined plot with filtered pendulum angle on the left axis and commanded cart speed on the right axis
+- A `Start Automatic Control` button that zeros the encoder, releases the latch servo, and starts the balancing loop
+- Real-time `Qx`, `Qx_dot`, `Qtheta`, `Qomega`, and `R` sliders that update the active Python-synthesized upright LQR gains while the controller is running
+- A `Stop And Exit` button that stops the actuator and closes the UI
+
 The downward command first homes left, then moves to the configured midpoint. Once the actuator is centered, let the pendulum hang downward and motionless, then press Enter to zero the encoder and start the damping loop. Press Enter again to stop the controller and write the log.
 
 The upright command now uses a staging loop after the setup moves. Arduino #2 can drive a simple latch servo on `D7`, with:

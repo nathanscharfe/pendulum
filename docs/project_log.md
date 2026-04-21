@@ -2,6 +2,48 @@
 
 ## 2026-04-21
 
+Added a live upright-control UI for bench tuning and updated the current upright defaults and plotting workflow around that interface.
+
+Completed:
+
+- Added a dedicated upright-control GUI workflow:
+  - `python -m software.host.main control-up-ui`
+  - `software/host/upright_control_ui.py`
+  - `software/host/main.py`
+- The new UI now:
+  - auto-connects to the current bench COM ports by default
+  - homes left and moves to the midpoint on launch
+  - provides `Start Automatic Control`, `Zero Encoder`, and `Stop And Exit` buttons
+  - plots filtered `theta`, filtered `omega`, and commanded speed live on one chart
+  - overlays the current `settle theta` and `settle omega` bands on the plot
+  - allows live tuning of `Q`, `R`, deadbands, trigger thresholds, and settle thresholds from sliders
+- Changed the current upright default LQR weights to a more aggressive baseline:
+  - `q_x = 3`
+  - `q_theta = 100`
+  - `software/host/pendulum_control.py`
+  - `software/host/main.py`
+- Changed the current upright settle defaults to a looser disarm condition:
+  - `settle_theta = 0.050 rad`
+  - `settle_omega = 6.0 deg/s`
+  - `settle_samples = 8`
+- Updated the upright UI so all omega-facing controls use `deg/s` for display while the controller still works internally in radians.
+- Fixed the left plot axis to `-15 deg` to `+15 deg` so the chart stays visually stable during tuning.
+- Updated top-level and host-side documentation to mention the UI-based upright workflow:
+  - `README.md`
+  - `software/host/README.md`
+
+Notes:
+
+- The UI chart now intentionally emphasizes readability over automatic rescaling so settling behavior and threshold overlays are easier to interpret at a glance.
+- The settle overlays were switched from the earlier deadband view because the settle thresholds better explain why the controller disarms and stays quiet.
+
+Next:
+
+- Re-test the new `q_x = 3`, `q_theta = 100` baseline against the previous working settings and compare drift, chatter, and recovery margin.
+- Decide whether the upright UI should eventually replace the text-based staging loop for most tuning work.
+
+## 2026-04-21
+
 Added upright-control hysteresis so the cart can stop making tiny corrective moves once the pendulum is balanced near upright.
 
 Completed:

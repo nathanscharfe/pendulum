@@ -28,6 +28,12 @@ From the repository root, run:
 python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up
 ```
 
+Or open the new UI workflow:
+
+```powershell
+python -m software.host.main control-up-ui
+```
+
 What to expect:
 
 1. The cart homes left and then moves to the middle.

@@ -77,7 +77,8 @@ class DownwardControlConfig(PendulumControlConfig):
 @dataclass(frozen=True)
 class UprightControlConfig(PendulumControlConfig):
     period_s: float = 0.01
-    lqr_q_theta: float = 50.0
+    lqr_q_x: float = 3.0
+    lqr_q_theta: float = 100.0
     lqr_r_input: float = 1.0
     lqr_x_gain: float = -1.0
     lqr_x_dot_gain: float = -2.0104
@@ -88,9 +89,9 @@ class UprightControlConfig(PendulumControlConfig):
     control_trigger_theta_rad: float = 0.015
     control_trigger_theta_dot_rad_s: float = 0.08
     control_trigger_samples: int = 3
-    settle_theta_rad: float = 0.01
-    settle_theta_dot_rad_s: float = 0.05
-    settle_samples: int = 50
+    settle_theta_rad: float = 0.05
+    settle_theta_dot_rad_s: float = 0.10471975511965977
+    settle_samples: int = 8
     settle_raw_theta_rad: float = 0.01
     settle_theta_residual_rad: float = 0.005
     settle_command_speed_mm_s: float = 10.0

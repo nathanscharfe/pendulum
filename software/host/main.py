@@ -14,6 +14,12 @@ from .encoder_ui import run_encoder_ui
 from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
 from .travel_calibration import DEFAULT_RELATIVE_STEPS, run_travel_calibration
+from .upright_control_ui import (
+    DEFAULT_UI_ACTUATOR_PORT,
+    DEFAULT_UI_ENCODER_PORT,
+    DEFAULT_UI_LIMITS_PORT,
+    run_upright_control_ui,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -152,9 +158,9 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--period-s", type=float, default=0.01)
     control_up.add_argument("--lqr-mode", choices=["python", "manual"], default="python", help="Use Python LQR synthesis from pendulum length and Q/R, or use explicit gain values.")
     control_up.add_argument("--pendulum-length-m", type=float, default=0.500, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
-    control_up.add_argument("--q-x", type=float, default=1.0, help="Upright LQR cart-position weight for Python synthesis.")
+    control_up.add_argument("--q-x", type=float, default=3.0, help="Upright LQR cart-position weight for Python synthesis.")
     control_up.add_argument("--q-x-dot", type=float, default=0.1, help="Upright LQR cart-velocity weight for Python synthesis.")
-    control_up.add_argument("--q-theta", type=float, default=50.0, help="Upright LQR pendulum-angle weight for Python synthesis.")
+    control_up.add_argument("--q-theta", type=float, default=100.0, help="Upright LQR pendulum-angle weight for Python synthesis.")
     control_up.add_argument("--q-omega", type=float, default=1.0, help="Upright LQR pendulum angular-rate weight for Python synthesis.")
     control_up.add_argument("--r-input", type=float, default=1.0, help="Upright LQR input weight for Python synthesis.")
     control_up.add_argument("--x-gain", type=float, default=-1.0, help="Upright LQR cart-position gain.")
@@ -178,9 +184,9 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--control-trigger-theta-rad", type=float, default=0.015, help="Hold actuator still until estimated theta exceeds this magnitude.")
     control_up.add_argument("--control-trigger-omega-rad-s", type=float, default=0.08, help="Hold actuator still until estimated theta-dot exceeds this magnitude.")
     control_up.add_argument("--control-trigger-samples", type=int, default=3, help="Consecutive trigger samples required before actuator commands are allowed.")
-    control_up.add_argument("--settle-theta-rad", type=float, default=0.01, help="Disarm control after estimated theta stays below this magnitude.")
-    control_up.add_argument("--settle-omega-rad-s", type=float, default=0.05, help="Disarm control after estimated theta-dot stays below this magnitude.")
-    control_up.add_argument("--settle-samples", type=int, default=50, help="Consecutive settled samples required before disarming control.")
+    control_up.add_argument("--settle-theta-rad", type=float, default=0.05, help="Disarm control after estimated theta stays below this magnitude.")
+    control_up.add_argument("--settle-omega-rad-s", type=float, default=0.10471975511965977, help="Disarm control after estimated theta-dot stays below this magnitude.")
+    control_up.add_argument("--settle-samples", type=int, default=8, help="Consecutive settled samples required before disarming control.")
     control_up.add_argument("--velocity-leak-per-s", type=float, default=0.0)
     control_up.add_argument("--max-accel-m-s2", type=float, default=30.0)
     control_up.add_argument("--max-speed-mm-s", type=float, default=350.0)
@@ -210,6 +216,10 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--middle-speed-mm-s", type=float, default=50.0)
     control_up.add_argument("--no-home", action="store_true", help="Skip homing left before arming control.")
     control_up.add_argument("--no-middle", action="store_true", help="Skip moving to the configured midpoint before arming control.")
+
+    control_up_ui = subparsers.add_parser("control-up-ui", help="Open a GUI for upright automatic control with live plots and tunable LQR weights.")
+    control_up_ui.add_argument("--home-speed-mm-s", type=float, default=50.0)
+    control_up_ui.add_argument("--middle-speed-mm-s", type=float, default=50.0)
 
     subparsers.add_parser("shell", help="Start an interactive motion shell without reopening serial ports between commands.")
 
@@ -489,6 +499,21 @@ def run_acceleration_sweep(
 def main() -> int:
     args = build_parser().parse_args()
     command = args.command or "monitor"
+
+    if command == "control-up-ui":
+        control_config = UprightControlConfig(
+            home_speed_mm_s=args.home_speed_mm_s,
+            middle_speed_mm_s=args.middle_speed_mm_s,
+        )
+        run_upright_control_ui(
+            actuator_port=args.actuator_port or DEFAULT_UI_ACTUATOR_PORT,
+            limits_port=args.limits_port or DEFAULT_UI_LIMITS_PORT,
+            encoder_port=args.encoder_port or DEFAULT_UI_ENCODER_PORT,
+            baudrate=args.baudrate,
+            motion_config=MotionConfig(steps_per_mm=args.steps_per_mm, travel_mm=args.travel_mm),
+            control_config=control_config,
+        )
+        return 0
 
     actuator = ActuatorController(args.actuator_port, args.baudrate) if args.actuator_port else None
     limits = LimitSensorReader(args.limits_port, args.baudrate) if args.limits_port else None
