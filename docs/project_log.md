@@ -1,5 +1,37 @@
 # Project Log
 
+## 2026-04-21
+
+Reached repeatable successful upright balancing on hardware and updated the top-level project presentation to reflect that milestone.
+
+Completed:
+
+- Saved the latest successful upright-control run and sidecar logs under stable names:
+  - `hardware/control experiments/upright/successful_repeatable_upright_balance_20260421_113304.csv`
+  - `hardware/control experiments/upright/successful_repeatable_upright_balance_20260421_113304_encoder_samples.csv`
+  - `hardware/control experiments/upright/successful_repeatable_upright_balance_20260421_113304_actuator_samples.csv`
+  - `hardware/control experiments/upright/successful_repeatable_upright_balance_20260421_113304_limit_samples.csv`
+- Recorded the repeatably working upright CLI:
+  - `python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-port COM8 control-up --pendulum-length-m 0.50 --q-x 1 --q-x-dot 0.1 --q-theta 50 --q-omega 1 --r-input 1`
+- Updated the top-level README to:
+  - embed the new top-level video `inverted_pendulum.mp4`
+  - describe the project as a successful real-hardware upright-control demonstration
+  - note the course inspiration from `ASE 381P-3 Optimal Control` with Dr. Bakolas at UT Austin
+  - point readers to the saved successful run and the working upright command
+- Recorded the current linear actuator microstep-driver DIP switch positions:
+  - `1-6 = ON, OFF, OFF, OFF, OFF, OFF`
+  - `hardware/linear actuator control/linear_actuator_controller/README.md`
+
+Notes:
+
+- The current success case is now repeatable with the `0.50 m`, `Q = diag([1, 0.1, 50, 1])`, `R = 1` controller settings.
+- The top-level README already contains a hardware section, but it is still more of a current setup summary than a formal bill of materials.
+
+Next:
+
+- Add a dedicated hardware bill of materials or parts list if a more explicit procurement/reference document would be useful.
+- Preserve the current successful encoder placement, mechanical setup, and wiring details in documentation before making further tuning changes.
+
 ## 2026-04-19
 
 Validated the pendulum-1 center-of-mass length with a small-angle free-swing period test and documented the result.

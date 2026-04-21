@@ -26,7 +26,7 @@ const bool AUTO_ZERO_ON_START = false;
 unsigned long nextSampleUs = 0;
 unsigned long lastSampleUs = 0;
 
-int previousRawCount = 0;
+int previousFilteredCount = 0;
 long unwrappedCount = 0;
 long zeroCount = STARTUP_ZERO_COUNT;
 bool havePreviousSample = false;
@@ -36,7 +36,7 @@ float angularVelocityRadPerSec = 0.0f;
 
 void printHeader()
 {
-  Serial.println("time_ms,connected,magnet_detected,magnet_too_weak,magnet_too_strong,agc,magnitude,raw_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s");
+  Serial.println("time_ms,connected,magnet_detected,magnet_too_weak,magnet_too_strong,agc,magnitude,raw_count,filtered_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s");
 }
 
 int wrapDelta(int currentCount, int previousCount)
@@ -57,8 +57,8 @@ int wrapDelta(int currentCount, int previousCount)
 
 void resetTrackingToCurrent()
 {
-  previousRawCount = encoder.rawAngle();
-  unwrappedCount = previousRawCount;
+  previousFilteredCount = encoder.readAngle();
+  unwrappedCount = previousFilteredCount;
   havePreviousSample = true;
   previousThetaRad = (unwrappedCount - zeroCount) * COUNTS_TO_RADIANS;
   angularVelocityRadPerSec = 0.0f;
@@ -152,17 +152,18 @@ void loop()
   int agc = encoder.readAGC();
   int magnitude = encoder.readMagnitude();
   int rawCount = encoder.rawAngle();
+  int filteredCount = encoder.readAngle();
 
   if (!havePreviousSample)
   {
-    previousRawCount = rawCount;
-    unwrappedCount = rawCount;
+    previousFilteredCount = filteredCount;
+    unwrappedCount = filteredCount;
     havePreviousSample = true;
   }
   else
   {
-    unwrappedCount += wrapDelta(rawCount, previousRawCount);
-    previousRawCount = rawCount;
+    unwrappedCount += wrapDelta(filteredCount, previousFilteredCount);
+    previousFilteredCount = filteredCount;
   }
 
   long relativeCount = unwrappedCount - zeroCount;
@@ -193,6 +194,8 @@ void loop()
   Serial.print(magnitude);
   Serial.print(",");
   Serial.print(rawCount);
+  Serial.print(",");
+  Serial.print(filteredCount);
   Serial.print(",");
   Serial.print(unwrappedCount);
   Serial.print(",");

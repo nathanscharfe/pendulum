@@ -20,6 +20,7 @@ ENCODER_FIELDS = [
     "agc",
     "magnitude",
     "raw_count",
+    "filtered_count",
     "unwrapped_count",
     "theta_deg",
     "theta_rad",

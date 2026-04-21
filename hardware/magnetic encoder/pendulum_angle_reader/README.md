@@ -25,7 +25,7 @@ Current bench wiring from the AS5600 breakout to the Arduino:
 The sketch streams CSV at `115200` baud:
 
 ```text
-time_ms,connected,magnet_detected,magnet_too_weak,magnet_too_strong,agc,magnitude,raw_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s
+time_ms,connected,magnet_detected,magnet_too_weak,magnet_too_strong,agc,magnitude,raw_count,filtered_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s
 ```
 
 Ideal magnet-health flags are:
@@ -49,8 +49,10 @@ Follow-up host captures on 2026-04-18 confirmed stable near-zero behavior, but l
 
 ## Notes
 
-- The AS5600 raw angle is `0` to `4095` counts per revolution.
-- The firmware unwraps rotations across the `0/4095` boundary.
+- The AS5600 angle registers are `0` to `4095` counts per revolution.
+- `raw_count` is the unfiltered AS5600 raw angle register.
+- `filtered_count` is the AS5600 filtered `ANGLE` register.
+- The firmware now unwraps the filtered angle across the `0/4095` boundary so `theta_*` follows the chip's internal filter.
 - `theta_deg` and `theta_rad` are reported relative to the current zero.
 - `omega_rad_s` is a simple finite-difference estimate from the unwrapped angle.
 - `agc` and `magnitude` are included so magnet field strength can be checked during bring-up.

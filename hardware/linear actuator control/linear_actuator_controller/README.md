@@ -9,6 +9,21 @@ Arduino #1 firmware for commanding the linear actuator stepper driver.
 - Driver `ENA` to Arduino `D12`
 - Arduino `GND` to driver signal ground
 
+## Driver DIP Switch Positions
+
+Recorded bench setting for the linear actuator microstep driver:
+
+```text
+1: ON
+2: OFF
+3: OFF
+4: OFF
+5: OFF
+6: OFF
+```
+
+If these switch positions change, actuator calibration and any tuned controller settings should be treated as invalid until rechecked.
+
 The driver enable pin is treated as active-low:
 
 ```cpp

@@ -29,6 +29,7 @@ const byte DIR_POSITIVE_LEVEL = HIGH;
 const byte DIR_NEGATIVE_LEVEL = LOW;
 
 const unsigned long SERIAL_BAUD = 115200;
+const unsigned long STATUS_PERIOD_MS = 20;
 const unsigned int MIN_STEP_DELAY_US = 10;
 const unsigned int MAX_STEP_DELAY_US = 10000;
 
@@ -377,7 +378,7 @@ void loop()
   updateMotion();
 
   unsigned long nowMs = millis();
-  if ((nowMs - lastStatusMs) >= 500)
+  if ((nowMs - lastStatusMs) >= STATUS_PERIOD_MS)
   {
     lastStatusMs = nowMs;
     printStatus();

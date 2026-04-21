@@ -52,6 +52,9 @@ class PendulumControlConfig:
     settle_theta_rad: float = 0.03
     settle_theta_dot_rad_s: float = 0.15
     settle_samples: int = 25
+    settle_raw_theta_rad: float = 0.03
+    settle_theta_residual_rad: float = 0.02
+    settle_command_speed_mm_s: float = 25.0
     velocity_leak_per_s: float = 0.0
     max_acceleration_m_s2: float = 0.5
     max_speed_mm_s: float = 150.0
@@ -85,6 +88,12 @@ class UprightControlConfig(PendulumControlConfig):
     control_trigger_theta_rad: float = 0.0
     control_trigger_theta_dot_rad_s: float = 0.0
     control_trigger_samples: int = 0
+    settle_theta_rad: float = 0.01
+    settle_theta_dot_rad_s: float = 0.05
+    settle_samples: int = 50
+    settle_raw_theta_rad: float = 0.01
+    settle_theta_residual_rad: float = 0.005
+    settle_command_speed_mm_s: float = 10.0
     max_acceleration_m_s2: float = 30.0
     max_speed_mm_s: float = 350.0
 
@@ -110,6 +119,7 @@ CONTROL_FIELDS = [
     "cart_position_sign",
     "encoder_angle_sign",
     "raw_count",
+    "filtered_count",
     "unwrapped_count",
     "connected",
     "magnet_detected",
@@ -283,6 +293,7 @@ def run_downward_control(
     control_armed = False
     trigger_sample_count = 0
     settle_sample_count = 0
+    last_encoder_timestamp_s = fresh_encoder_snapshot.timestamp_s
     print("Control is running. Press Enter to stop, or Ctrl+C for immediate stop.")
 
     try:
@@ -301,6 +312,11 @@ def run_downward_control(
             if encoder_snapshot is None:
                 stop_reason = "no_encoder_data"
                 break
+
+            if encoder_snapshot.timestamp_s <= last_encoder_timestamp_s:
+                sleep(0.001)
+                continue
+            last_encoder_timestamp_s = encoder_snapshot.timestamp_s
 
             if actuator_snapshot is None:
                 actuator.request_status()
@@ -378,8 +394,11 @@ def run_downward_control(
             else:
                 settle_sample_count = update_settle_sample_count(
                     settle_sample_count=settle_sample_count,
+                    raw_theta_rad=theta_rad,
                     theta_rad=filtered_theta_rad,
                     theta_dot_rad_s=filtered_theta_dot_rad_s,
+                    theta_residual_rad=theta_residual_rad,
+                    command_speed_mm_s=command_speed_mm_s,
                     config=control_config,
                 )
                 if settle_sample_count >= control_config.settle_samples:
@@ -657,13 +676,19 @@ def update_trigger_sample_count(
 
 def update_settle_sample_count(
     settle_sample_count: int,
+    raw_theta_rad: float,
     theta_rad: float,
     theta_dot_rad_s: float,
+    theta_residual_rad: float,
+    command_speed_mm_s: float,
     config: PendulumControlConfig,
 ) -> int:
     settled = (
-        abs(theta_rad) <= config.settle_theta_rad
+        abs(raw_theta_rad) <= config.settle_raw_theta_rad
+        and abs(theta_rad) <= config.settle_theta_rad
         and abs(theta_dot_rad_s) <= config.settle_theta_dot_rad_s
+        and abs(theta_residual_rad) <= config.settle_theta_residual_rad
+        and abs(command_speed_mm_s) <= config.settle_command_speed_mm_s
     )
     if settled:
         return settle_sample_count + 1
@@ -836,6 +861,7 @@ def build_log_row(
         "cart_position_sign": f"{control_config.cart_position_sign:g}",
         "encoder_angle_sign": f"{control_config.encoder_angle_sign:g}",
         "raw_count": encoder_snapshot.data["raw_count"],
+        "filtered_count": encoder_snapshot.data.get("filtered_count", encoder_snapshot.data["raw_count"]),
         "unwrapped_count": encoder_snapshot.data["unwrapped_count"],
         "connected": encoder_snapshot.data["connected"],
         "magnet_detected": encoder_snapshot.data["magnet_detected"],

@@ -10,7 +10,7 @@ class EncoderReader(SerialWorker):
 
     HEADER = (
         "time_ms,connected,magnet_detected,magnet_too_weak,magnet_too_strong,"
-        "agc,magnitude,raw_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s"
+        "agc,magnitude,raw_count,filtered_count,unwrapped_count,theta_deg,theta_rad,omega_rad_s"
     )
 
     def request_header(self) -> None:
@@ -27,8 +27,25 @@ class EncoderReader(SerialWorker):
             return None
 
         parts = line.split(",")
-        if len(parts) != 12:
+        if len(parts) not in (12, 13):
             return None
+
+        if len(parts) == 12:
+            return {
+                "time_ms": int(parts[0]),
+                "connected": parse_bool_int(parts[1]),
+                "magnet_detected": parse_bool_int(parts[2]),
+                "magnet_too_weak": parse_bool_int(parts[3]),
+                "magnet_too_strong": parse_bool_int(parts[4]),
+                "agc": int(parts[5]),
+                "magnitude": int(parts[6]),
+                "raw_count": int(parts[7]),
+                "filtered_count": int(parts[7]),
+                "unwrapped_count": int(parts[8]),
+                "theta_deg": float(parts[9]),
+                "theta_rad": float(parts[10]),
+                "omega_rad_s": float(parts[11]),
+            }
 
         return {
             "time_ms": int(parts[0]),
@@ -39,8 +56,9 @@ class EncoderReader(SerialWorker):
             "agc": int(parts[5]),
             "magnitude": int(parts[6]),
             "raw_count": int(parts[7]),
-            "unwrapped_count": int(parts[8]),
-            "theta_deg": float(parts[9]),
-            "theta_rad": float(parts[10]),
-            "omega_rad_s": float(parts[11]),
+            "filtered_count": int(parts[8]),
+            "unwrapped_count": int(parts[9]),
+            "theta_deg": float(parts[10]),
+            "theta_rad": float(parts[11]),
+            "omega_rad_s": float(parts[12]),
         }

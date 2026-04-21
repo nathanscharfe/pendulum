@@ -172,6 +172,14 @@ To keep the existing encoder zero instead:
 python -m software.host.main --encoder-port COM8 capture-encoder --no-zero-on-start
 ```
 
+Open a lightweight live encoder UI:
+
+```powershell
+python -m software.host.main --encoder-port COM8 encoder-ui
+```
+
+This opens a small Tkinter window that uses the same live encoder stream as the control sessions, updates from the `100 Hz` serial samples, shows the latest `theta`, plots a rolling theta-vs-time trace, and includes a `Zero` button that sends the encoder zero command and clears the plotted history.
+
 Run a dedicated small-angle pendulum period test:
 
 ```powershell

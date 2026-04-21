@@ -10,6 +10,7 @@ from .arduino_encoder import EncoderReader
 from .arduino_limits import LimitSensorReader
 from .pendulum_control import DownwardControlConfig, UprightControlConfig, run_downward_control, run_upright_control
 from .encoder_capture import run_encoder_capture, run_period_test_capture
+from .encoder_ui import run_encoder_ui
 from .motion_control import DEFAULT_STEPS_PER_MM, MotionConfig, MotionController, MotionSafetyError
 from .serial_worker import SerialWorker
 from .travel_calibration import DEFAULT_RELATIVE_STEPS, run_travel_calibration
@@ -75,6 +76,8 @@ def build_parser() -> argparse.ArgumentParser:
     capture_encoder = subparsers.add_parser("capture-encoder", help="Record pendulum encoder data until Enter is pressed.")
     capture_encoder.add_argument("--output", type=Path, help="CSV output path.")
     capture_encoder.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
+
+    subparsers.add_parser("encoder-ui", help="Open a lightweight live encoder viewer with a theta plot and zero button.")
 
     period_test = subparsers.add_parser("period-test", help="Record a small-angle free-swing pendulum period test to CSV.")
     period_test.add_argument("--output", type=Path, help="CSV output path.")
@@ -532,6 +535,13 @@ def main() -> int:
                     print("--encoder-port is required for period-test")
                     return 2
                 run_period_test_capture(encoder, output_path=args.output, zero_on_start=not args.no_zero_on_start)
+                return 0
+
+            if command == "encoder-ui":
+                if encoder is None:
+                    print("--encoder-port is required for encoder-ui")
+                    return 2
+                run_encoder_ui(encoder)
                 return 0
 
             if command == "control-down":
