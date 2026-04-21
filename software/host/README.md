@@ -186,7 +186,7 @@ Current pendulum-1 check:
 - Analysis notebook: `hardware/magnetic encoder/analysis/analyze_pendulum_1_period_test.ipynb`
 - Average measured period: about `1.42 s`
 - Inferred simple-pendulum effective length: about `0.50 m`
-- This is close to the `0.510 m` value already used in the first-pass MATLAB LQR model, so the original tape-measure estimate appears reasonable.
+- This is also close to the current `0.500 m` host-side control default, so the period-test estimate remains a reasonable working value.
 
 Run a first-pass downward pendulum damping experiment:
 
@@ -228,7 +228,7 @@ Useful control-synthesis arguments for `control-down` and `control-up`:
 
 - `--lqr-mode python`: compute gains from `l`, `Q`, and `R` inside Python. This is now the default.
 - `--lqr-mode manual`: bypass Python synthesis and use the explicit `--x-gain`, `--x-dot-gain`, `--theta-gain`, and `--omega-gain` values.
-- `--pendulum-length-m 0.75`: change the modeled pendulum length without editing code.
+- `--pendulum-length-m 0.50`: change the modeled pendulum length without editing code. The current host default is `0.500 m`.
 - `--q-x 1 --q-x-dot 0.1 --q-theta 50 --q-omega 1 --r-input 1`: change the LQR cost weights on demand.
 - `--center-gain 0.2`: add an extra post-LQR cart-centering term in `1/s` if you want the cart to bias back toward track center.
 
@@ -241,11 +241,19 @@ python -m software.host.main --actuator-port COM6 --limits-port COM10 --encoder-
 Because the upright first-pass LQR wants substantially more authority than the downward case, the upright command defaults to a larger acceleration and speed clamp:
 
 - Control period: `0.01 s`
-- Speed clamp: `+/-325 mm/s`
-- Acceleration clamp: `+/-4.0 m/s^2`
+- Speed clamp: `+/-350 mm/s`
+- Acceleration clamp: `+/-30.0 m/s^2`
 - Control trigger: immediate arm after Enter and encoder zeroing
 
-The `325 mm/s` upright speed clamp is the current host default for upright testing. It is slightly above the earlier measured no-stall `315 mm/s` baseline, so treat it as an experimental increase and back it off if the actuator shows signs of stalling.
+The `350 mm/s` upright speed clamp is the current host default for upright testing. It is above the earlier measured no-stall `315 mm/s` baseline, so treat it as an experimental increase and back it off if the actuator shows signs of stalling.
+
+Interactive actuator acceleration sweep:
+
+```powershell
+python -m software.host.main --actuator-port COM6 --limits-port COM10 accel-sweep --target-speed-mm-s 325 --accel-start-m-s2 4 --accel-stop-m-s2 20 --accel-step-m-s2 0.5 --command-period-s 0.01 --hold-duration-s 0.25
+```
+
+This command homes left before each trial, ramps the actuator from zero to the target speed using the requested acceleration, keeps the host-side limit checks active during the ramp, and asks whether the motor stalled before continuing to the next test acceleration.
 
 It estimates the full state `[x, x_dot, theta, theta_dot]`, computes `u = -KX`, and integrates that acceleration command into the actuator step-rate interface. The command includes filtering, theta slew-rate limiting, and deadbands so a motionless pendulum does not make the actuator chatter.
 

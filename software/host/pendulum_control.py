@@ -22,7 +22,7 @@ from .serial_worker import SerialSnapshot
 class PendulumControlConfig:
     period_s: float = 0.05
     lqr_mode: str = "python"
-    pendulum_length_m: float = 0.510
+    pendulum_length_m: float = 0.500
     lqr_q_x: float = 1.0
     lqr_q_x_dot: float = 0.1
     lqr_q_theta: float = 5.0
@@ -85,8 +85,8 @@ class UprightControlConfig(PendulumControlConfig):
     control_trigger_theta_rad: float = 0.0
     control_trigger_theta_dot_rad_s: float = 0.0
     control_trigger_samples: int = 0
-    max_acceleration_m_s2: float = 4.0
-    max_speed_mm_s: float = 325.0
+    max_acceleration_m_s2: float = 30.0
+    max_speed_mm_s: float = 350.0
 
 
 CONTROL_FIELDS = [

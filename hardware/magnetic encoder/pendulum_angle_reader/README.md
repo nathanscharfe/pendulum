@@ -2,6 +2,8 @@
 
 Arduino firmware for reading the pendulum angle from an AS5600 magnetic encoder.
 
+Current bench hardware is an Arduino #3 connected to the AS5600 breakout over I2C.
+
 ## Requirements
 
 - Arduino with I2C support
@@ -10,17 +12,13 @@ Arduino firmware for reading the pendulum angle from an AS5600 magnetic encoder.
 
 ## Wiring
 
-Typical Arduino Uno or Nano wiring:
+Current bench wiring from the AS5600 breakout to the Arduino:
 
-- `VCC` to `3.3V` or `5V`, depending on the breakout board
+- `VCC` to `5V`
 - `GND` to `GND`
-- `SDA` to `A4`
-- `SCL` to `A5`
-
-For an Arduino Mega:
-
-- `SDA` to `20`
-- `SCL` to `21`
+- `DIR` to `GND`
+- `SCL` to `SCL`
+- `SDA` to `SDA`
 
 ## Serial Output
 

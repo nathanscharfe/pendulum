@@ -62,6 +62,16 @@ def build_parser() -> argparse.ArgumentParser:
     speed.add_argument("speed_mm_s", type=float)
     speed.add_argument("--duration", type=float, required=True)
 
+    accel_sweep = subparsers.add_parser("accel-sweep", help="Interactively ramp actuator speed with a sweep of test accelerations.")
+    accel_sweep.add_argument("--side", choices=["left", "right"], default="right", help="Ramp direction for the test sweep.")
+    accel_sweep.add_argument("--target-speed-mm-s", type=float, default=325.0, help="Target ramp speed in mm/s.")
+    accel_sweep.add_argument("--accel-start-m-s2", type=float, default=1.0, help="First test acceleration in m/s^2.")
+    accel_sweep.add_argument("--accel-stop-m-s2", type=float, default=8.0, help="Final test acceleration in m/s^2.")
+    accel_sweep.add_argument("--accel-step-m-s2", type=float, default=0.5, help="Increment between tested accelerations in m/s^2.")
+    accel_sweep.add_argument("--command-period-s", type=float, default=0.01, help="Seconds between ramp command updates.")
+    accel_sweep.add_argument("--hold-duration-s", type=float, default=0.25, help="Seconds to hold the target speed before stopping.")
+    accel_sweep.add_argument("--home-speed-mm-s", type=float, default=25.0, help="Speed for the homing move before the sweep.")
+
     capture_encoder = subparsers.add_parser("capture-encoder", help="Record pendulum encoder data until Enter is pressed.")
     capture_encoder.add_argument("--output", type=Path, help="CSV output path.")
     capture_encoder.add_argument("--no-zero-on-start", action="store_true", help="Keep the current encoder zero instead of zeroing at capture start.")
@@ -74,7 +84,7 @@ def build_parser() -> argparse.ArgumentParser:
     control_down.add_argument("--output", type=Path, help="CSV output path.")
     control_down.add_argument("--period-s", type=float, default=0.05)
     control_down.add_argument("--lqr-mode", choices=["python", "manual"], default="python", help="Use Python LQR synthesis from pendulum length and Q/R, or use explicit gain values.")
-    control_down.add_argument("--pendulum-length-m", type=float, default=0.510, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
+    control_down.add_argument("--pendulum-length-m", type=float, default=0.500, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
     control_down.add_argument("--q-x", type=float, default=1.0, help="Downward LQR cart-position weight for Python synthesis.")
     control_down.add_argument("--q-x-dot", type=float, default=0.1, help="Downward LQR cart-velocity weight for Python synthesis.")
     control_down.add_argument("--q-theta", type=float, default=5.0, help="Downward LQR pendulum-angle weight for Python synthesis.")
@@ -138,7 +148,7 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--output", type=Path, help="CSV output path.")
     control_up.add_argument("--period-s", type=float, default=0.01)
     control_up.add_argument("--lqr-mode", choices=["python", "manual"], default="python", help="Use Python LQR synthesis from pendulum length and Q/R, or use explicit gain values.")
-    control_up.add_argument("--pendulum-length-m", type=float, default=0.510, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
+    control_up.add_argument("--pendulum-length-m", type=float, default=0.500, help="Pendulum pivot-to-center-of-mass length in meters for Python LQR synthesis.")
     control_up.add_argument("--q-x", type=float, default=1.0, help="Upright LQR cart-position weight for Python synthesis.")
     control_up.add_argument("--q-x-dot", type=float, default=0.1, help="Upright LQR cart-velocity weight for Python synthesis.")
     control_up.add_argument("--q-theta", type=float, default=50.0, help="Upright LQR pendulum-angle weight for Python synthesis.")
@@ -169,8 +179,8 @@ def build_parser() -> argparse.ArgumentParser:
     control_up.add_argument("--settle-omega-rad-s", type=float, default=0.15, help="Disarm control after estimated theta-dot stays below this magnitude.")
     control_up.add_argument("--settle-samples", type=int, default=25, help="Consecutive settled samples required before disarming control.")
     control_up.add_argument("--velocity-leak-per-s", type=float, default=0.0)
-    control_up.add_argument("--max-accel-m-s2", type=float, default=4.0)
-    control_up.add_argument("--max-speed-mm-s", type=float, default=325.0)
+    control_up.add_argument("--max-accel-m-s2", type=float, default=30.0)
+    control_up.add_argument("--max-speed-mm-s", type=float, default=350.0)
     control_up.add_argument("--max-angle-rad", type=float, default=0.35)
     control_up.add_argument(
         "--invert-control",
@@ -334,6 +344,143 @@ def run_motion_shell(actuator: ActuatorController, limits: LimitSensorReader, mo
 
         except (MotionSafetyError, ValueError) as exc:
             print(f"Motion command failed: {exc}")
+
+
+def frange_inclusive(start: float, stop: float, step: float) -> list[float]:
+    if step <= 0.0:
+        raise ValueError("step must be positive")
+    if stop < start:
+        raise ValueError("stop must be greater than or equal to start")
+
+    values: list[float] = []
+    value = start
+    while value <= stop + 1e-9:
+        values.append(round(value, 10))
+        value += step
+    return values
+
+
+def ramp_speed_with_acceleration(
+    actuator: ActuatorController,
+    limits: LimitSensorReader,
+    motion: MotionController,
+    *,
+    target_speed_mm_s: float,
+    acceleration_m_s2: float,
+    command_period_s: float,
+    hold_duration_s: float,
+) -> None:
+    if acceleration_m_s2 <= 0.0:
+        raise ValueError("acceleration_m_s2 must be positive")
+    if command_period_s <= 0.0:
+        raise ValueError("command_period_s must be positive")
+    if hold_duration_s < 0.0:
+        raise ValueError("hold_duration_s must be nonnegative")
+
+    signed_target_speed_mm_s = target_speed_mm_s
+    direction = 1.0 if signed_target_speed_mm_s >= 0.0 else -1.0
+    speed_step_mm_s = acceleration_m_s2 * command_period_s * 1000.0
+    current_speed_mm_s = 0.0
+
+    actuator.enable()
+    try:
+        while direction * current_speed_mm_s < direction * signed_target_speed_mm_s:
+            latest_limits = motion._require_limits()
+            motion._stop_if_wrong_limit_for_direction(current_speed_mm_s or signed_target_speed_mm_s, latest_limits)
+
+            current_speed_mm_s += direction * speed_step_mm_s
+            if direction * current_speed_mm_s > direction * signed_target_speed_mm_s:
+                current_speed_mm_s = signed_target_speed_mm_s
+
+            actuator.set_step_rate(motion.mm_s_to_steps_s(current_speed_mm_s))
+            time.sleep(command_period_s)
+
+        hold_start_s = time.monotonic()
+        while time.monotonic() - hold_start_s < hold_duration_s:
+            latest_limits = motion._require_limits()
+            motion._stop_if_wrong_limit_for_direction(signed_target_speed_mm_s, latest_limits)
+            actuator.set_step_rate(motion.mm_s_to_steps_s(signed_target_speed_mm_s))
+            time.sleep(command_period_s)
+    finally:
+        actuator.stop_motion()
+        actuator.disable()
+
+
+def run_acceleration_sweep(
+    actuator: ActuatorController,
+    limits: LimitSensorReader,
+    motion: MotionController,
+    *,
+    side: str,
+    target_speed_mm_s: float,
+    accel_start_m_s2: float,
+    accel_stop_m_s2: float,
+    accel_step_m_s2: float,
+    command_period_s: float,
+    hold_duration_s: float,
+    home_speed_mm_s: float,
+) -> int:
+    test_accelerations = frange_inclusive(accel_start_m_s2, accel_stop_m_s2, accel_step_m_s2)
+    signed_target_speed_mm_s = abs(target_speed_mm_s)
+    if side == "left":
+        signed_target_speed_mm_s = -signed_target_speed_mm_s
+
+    print("Acceleration sweep test")
+    print(f"Direction: {side}")
+    print(f"Target speed: {signed_target_speed_mm_s:g} mm/s")
+    print(f"Acceleration sweep: {accel_start_m_s2:g} to {accel_stop_m_s2:g} m/s^2 in steps of {accel_step_m_s2:g}")
+    print(f"Command period: {command_period_s:g} s")
+    print(f"Hold duration: {hold_duration_s:g} s")
+    print("The actuator will home left before each trial.")
+    print("Host-side limit checks remain active during every ramp.")
+    print("After each ramp, answer whether the motor stalled: y = yes, n = no, q = quit.")
+
+    results: list[tuple[float, bool]] = []
+    for index, acceleration_m_s2 in enumerate(test_accelerations, start=1):
+        print()
+        print(f"Trial {index}/{len(test_accelerations)}: acceleration = {acceleration_m_s2:g} m/s^2")
+        print(f"Expected speed change per update: {acceleration_m_s2 * command_period_s * 1000.0:g} mm/s")
+
+        motion.home(side="left", speed_mm_s=home_speed_mm_s)
+        input("Press Enter when clear to run this ramp...")
+
+        try:
+            ramp_speed_with_acceleration(
+                actuator,
+                limits,
+                motion,
+                target_speed_mm_s=signed_target_speed_mm_s,
+                acceleration_m_s2=acceleration_m_s2,
+                command_period_s=command_period_s,
+                hold_duration_s=hold_duration_s,
+            )
+        except MotionSafetyError as exc:
+            print(f"Trial stopped by motion safety: {exc}")
+
+        while True:
+            answer = input("Did the motor stall? [y/n/q]: ").strip().lower()
+            if answer in {"y", "yes"}:
+                results.append((acceleration_m_s2, True))
+                break
+            if answer in {"n", "no"}:
+                results.append((acceleration_m_s2, False))
+                break
+            if answer in {"q", "quit"}:
+                print("Stopping sweep early.")
+                print()
+                print("Summary:")
+                for accel_value, stalled in results:
+                    outcome = "stalled" if stalled else "no stall"
+                    print(f"  {accel_value:g} m/s^2 -> {outcome}")
+                return 0
+            print("Please answer y, n, or q.")
+
+    print()
+    print("Summary:")
+    for accel_value, stalled in results:
+        outcome = "stalled" if stalled else "no stall"
+        print(f"  {accel_value:g} m/s^2 -> {outcome}")
+    return 0
 
 
 def main() -> int:
@@ -512,6 +659,21 @@ def main() -> int:
             if motion is None:
                 print("--actuator-port and --limits-port are required for motion commands")
                 return 2
+
+            if command == "accel-sweep":
+                return run_acceleration_sweep(
+                    actuator,
+                    limits,
+                    motion,
+                    side=args.side,
+                    target_speed_mm_s=args.target_speed_mm_s,
+                    accel_start_m_s2=args.accel_start_m_s2,
+                    accel_stop_m_s2=args.accel_stop_m_s2,
+                    accel_step_m_s2=args.accel_step_m_s2,
+                    command_period_s=args.command_period_s,
+                    hold_duration_s=args.hold_duration_s,
+                    home_speed_mm_s=args.home_speed_mm_s,
+                )
 
             if command == "shell":
                 return run_motion_shell(actuator, limits, motion)

@@ -344,3 +344,40 @@ Next:
 - Re-test upright control once the encoder and magnet hardware rework is installed.
 - Use the logged `config_*` fields to compare successful and failed runs without relying on terminal notes.
 - Decide whether to add a hard startup refusal when encoder magnetic diagnostics indicate that the magnet is missing or too weak.
+
+## 2026-04-20
+
+Refined the current bench defaults and documented the actual Arduino wiring used on the encoder and limit/servo boards.
+
+Completed:
+
+- Updated the host default pendulum length for Python LQR synthesis to `0.500 m`:
+  - `software/host/pendulum_control.py`
+  - `software/host/main.py`
+- Increased the upright default acceleration clamp to `30.0 m/s^2` and the upright default speed clamp to `350 mm/s` for further bench testing:
+  - `software/host/pendulum_control.py`
+  - `software/host/main.py`
+  - `software/host/README.md`
+- Added an interactive actuator acceleration sweep command for stall testing:
+  - `accel-sweep`
+  - homes left before each trial
+  - ramps to a target speed with a chosen acceleration
+  - keeps host-side limit protection active during the test
+  - asks whether the motor stalled before continuing
+- Documented the actual AS5600-to-Arduino wiring currently used on the bench:
+  - `hardware/magnetic encoder/pendulum_angle_reader/README.md`
+- Documented the actual Arduino #2 limit-sensor and latch-servo wiring:
+  - `hardware/limit sensors/limit_sensor_reader/README.md`
+- Updated top-level and host docs to remove stale references to the earlier `325 mm/s` upright default and to reflect the current `0.500 m` host pendulum-length default:
+  - `README.md`
+  - `software/host/README.md`
+
+Notes:
+
+- Recent upright runs still show that long periods of successful balancing can end abruptly once the cart state drifts far enough that the controller runs out of recoverable margin.
+- The newer `config_*` logging remains useful here because each control CSV now records the exact pendulum length, `Q`, `R`, speed clamp, and acceleration clamp used for that run.
+
+Next:
+
+- Use the new `accel-sweep` command to identify a more defensible actuator acceleration limit on hardware.
+- Revisit `Q` weighting, especially cart-position weighting, after the actuator authority limits are better characterized.

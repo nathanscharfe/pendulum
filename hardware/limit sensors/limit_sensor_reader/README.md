@@ -2,23 +2,31 @@
 
 Arduino firmware for the second Arduino that monitors the optical limit sensors at each end of the linear actuator.
 
+Current bench hardware is an Arduino #2 that reads the two optical limit sensors and also drives the latch servo used for upright staging.
+
 ## Sensor Wiring
 
-Wire both tested sensors this way:
+Current bench wiring from the sensors and latch servo to Arduino #2:
 
-Left/end A sensor:
+Left/end A limit sensor:
 
 - `brown` to Arduino `5V`
 - `blue` to Arduino `GND`
 - `black` to Arduino `D2`
 - `white` disconnected
 
-Right/end B sensor:
+Right/end B limit sensor:
 
-- `brown` to Arduino `5V`
+- `brown` to Arduino `3.3V`
 - `blue` to Arduino `GND`
 - `black` to Arduino `D3`
 - `white` disconnected
+
+Latch servo:
+
+- `black` to Arduino `GND`
+- `red` to Arduino `VIN`
+- `white` to Arduino `D7`
 
 With the default sketch settings, `left_limit` and `right_limit` should change between `0` and `1` when each sensor is unblocked and blocked.
 
@@ -26,6 +34,7 @@ With the default sketch settings, `left_limit` and `right_limit` should change b
 
 - Left/end A black signal: `D2`
 - Right/end B black signal: `D3`
+- Latch servo signal: `D7`
 - Left/end A white complement signal: disabled by default
 - Right/end B white complement signal: disabled by default
 
@@ -72,6 +81,8 @@ It also prints event lines when a main limit state changes:
 
 - `h`: print the CSV header
 - `s`: print the current state immediately
+- `g`: release the servo to `0 deg`
+- `p`: hold the servo at `80 deg`
 
 ## Bring-Up Checklist
 
